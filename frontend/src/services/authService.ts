@@ -1,7 +1,7 @@
 import { apiClient } from './api';
 import { ENDPOINTS } from '../constants/apiEndpoints';
-import { ApiResponse } from '../types/api';
-import {
+import type { ApiResponse } from '../types/api';
+import type {
   LoginRequest,
   LoginResponse,
   RefreshTokenResponse,

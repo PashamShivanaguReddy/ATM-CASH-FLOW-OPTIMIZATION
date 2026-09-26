@@ -6,7 +6,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { User, UserRole, LoginRequest } from '../types/auth';
+import type { User, UserRole, LoginRequest } from '../types/auth';
 import { authService } from '../services/authService';
 import { storage } from '../utils/storage';
 import { setAuthCallbacks } from '../services/api';

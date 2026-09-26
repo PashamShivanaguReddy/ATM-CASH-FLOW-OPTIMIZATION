@@ -2,7 +2,7 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Table, Column } from '../components/ui/Table';
+import { Table, type Column } from '../components/ui/Table';
 
 interface AtmRow {
   id: number;

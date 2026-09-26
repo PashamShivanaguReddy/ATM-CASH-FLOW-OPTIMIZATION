@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { UserRole } from '../types/auth';
+import type { UserRole } from '../types/auth';
 import { Loading } from '../components/ui/Loading';
 
 interface RoleProtectedRouteProps {

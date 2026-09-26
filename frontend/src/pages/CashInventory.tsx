@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { Table, Column } from '../components/ui/Table';
+import { Table, type Column } from '../components/ui/Table';
 
 interface DenomRow {
   atmCode: string;

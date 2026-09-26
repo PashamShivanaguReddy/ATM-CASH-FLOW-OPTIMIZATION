@@ -11,7 +11,7 @@ import {
   Sliders,
   Settings,
 } from 'lucide-react';
-import { UserRole } from '../types/auth';
+import type { UserRole } from '../types/auth';
 
 export interface NavItem {
   title: string;

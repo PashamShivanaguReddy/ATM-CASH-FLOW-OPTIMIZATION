@@ -1,4 +1,4 @@
-import { UserRole } from '../types/auth';
+import type { UserRole } from '../types/auth';
 
 export const USER_ROLES: Record<UserRole, UserRole> = {
   SUPER_ADMIN: 'SUPER_ADMIN',

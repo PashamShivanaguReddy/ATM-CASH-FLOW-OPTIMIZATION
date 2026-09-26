@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from '../types/auth';
+import type { UserRole, UserStatus } from '../types/auth';
 
 export function formatRole(role: UserRole | string): string {
   switch (role) {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '../components/ui/Badge';
-import { Table, Column } from '../components/ui/Table';
+import { Table, type Column } from '../components/ui/Table';
 
 interface AlertItem {
   id: string;

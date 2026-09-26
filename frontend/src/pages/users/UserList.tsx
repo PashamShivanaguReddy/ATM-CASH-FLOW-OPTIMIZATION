@@ -9,10 +9,10 @@ import {
   Trash2,
 } from 'lucide-react';
 import { userService } from '../../services/userService';
-import { UserRole, UserStatus } from '../../types/auth';
-import { UserDto, UserFilterParams } from '../../types/user';
+import type { UserRole, UserStatus } from '../../types/auth';
+import type { UserDto, UserFilterParams } from '../../types/user';
 import { Button } from '../../components/ui/Button';
-import { Table, Column } from '../../components/ui/Table';
+import { Table, type Column } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Pagination } from '../../components/ui/Pagination';
 import { Modal } from '../../components/ui/Modal';

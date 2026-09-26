@@ -1,8 +1,8 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL, ENDPOINTS } from '../constants/apiEndpoints';
 import { storage } from '../utils/storage';
-import { ApiResponse, ApiError } from '../types/api';
-import { RefreshTokenResponse } from '../types/auth';
+import type { ApiResponse, ApiError } from '../types/api';
+import type { RefreshTokenResponse } from '../types/auth';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

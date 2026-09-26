@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/navigation/Sidebar';
 import { Navbar } from '../components/navigation/Navbar';
-import { Breadcrumb, BreadcrumbItem } from '../components/ui/Breadcrumb';
+import { Breadcrumb, type BreadcrumbItem } from '../components/ui/Breadcrumb';
 
 export const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);

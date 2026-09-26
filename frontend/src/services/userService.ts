@@ -1,7 +1,7 @@
 import { apiClient } from './api';
 import { ENDPOINTS } from '../constants/apiEndpoints';
-import { ApiResponse, PaginatedResponse } from '../types/api';
-import {
+import type { ApiResponse, PaginatedResponse } from '../types/api';
+import type {
   UserDto,
   CreateUserRequest,
   UpdateUserRequest,

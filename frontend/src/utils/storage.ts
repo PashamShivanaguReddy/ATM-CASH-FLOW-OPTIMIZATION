@@ -1,4 +1,4 @@
-import { User } from '../types/auth';
+import type { User } from '../types/auth';
 
 const ACCESS_TOKEN_KEY = 'atm_access_token';
 const REFRESH_TOKEN_KEY = 'atm_refresh_token';
