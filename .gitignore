@@ -1,0 +1,19 @@
+# Java / Maven
+**/target/
+*.class
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/settings.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python / ML generated runtime files
+__pycache__/
+*.py[cod]
+.venv/
