@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.git/
+plots/
+model_evaluation/
+*.html
+*.log
+project/prediction_results.csv
+project/feature_importance.csv
+project/*.csv
+!project/models/
+!project/models/atm_forecast_model.pkl

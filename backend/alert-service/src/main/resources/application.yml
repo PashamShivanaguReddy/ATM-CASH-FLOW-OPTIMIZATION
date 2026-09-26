@@ -1,0 +1,19 @@
+spring:
+  application.name: alert-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: alert-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa.hibernate.ddl-auto: ${JPA_DDL_AUTO:update}
+  jpa.open-in-view: false
+server.port: ${SERVER_PORT:8088}
+service.url: ${SERVICE_URL:http://localhost:8088}
+management.endpoints.web.exposure.include: health,info
+springdoc.swagger-ui.path: /swagger-ui.html
+logging.level.com.atm: ${LOG_LEVEL:INFO}

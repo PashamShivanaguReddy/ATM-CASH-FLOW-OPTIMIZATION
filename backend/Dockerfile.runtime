@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1.7
+FROM maven:3.9.9-eclipse-temurin-17 AS build
+WORKDIR /workspace
+COPY . .
+RUN --mount=type=cache,target=/root/.m2 mvn package -DskipTests
+
+FROM eclipse-temurin:17-jre-jammy
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=build /workspace/api-gateway/target/*.jar /app/jars/api-gateway.jar
+COPY --from=build /workspace/auth-service/target/*.jar /app/jars/auth-service.jar
+COPY --from=build /workspace/user-service/target/*.jar /app/jars/user-service.jar
+COPY --from=build /workspace/bank-service/target/*.jar /app/jars/bank-service.jar
+COPY --from=build /workspace/atm-service/target/*.jar /app/jars/atm-service.jar
+COPY --from=build /workspace/transaction-service/target/*.jar /app/jars/transaction-service.jar
+COPY --from=build /workspace/cash-inventory-service/target/*.jar /app/jars/cash-inventory-service.jar
+COPY --from=build /workspace/prediction-service/target/*.jar /app/jars/prediction-service.jar
+COPY --from=build /workspace/alert-service/target/*.jar /app/jars/alert-service.jar
+COPY --from=build /workspace/optimization-service/target/*.jar /app/jars/optimization-service.jar
+COPY --from=build /workspace/notification-service/target/*.jar /app/jars/notification-service.jar
+COPY --from=build /workspace/analytics-service/target/*.jar /app/jars/analytics-service.jar
+COPY --from=build /workspace/config-server/target/*.jar /app/jars/config-server.jar
+COPY --from=build /workspace/service-registry/target/*.jar /app/jars/service-registry.jar

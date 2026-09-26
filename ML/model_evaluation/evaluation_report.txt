@@ -1,0 +1,37 @@
+ATM CASH DEMAND MODEL EVALUATION
+================================
+
+Model source: trained RandomForestRegressor fallback; no compatible saved model found
+Features used: previous_day_withdrawal, rolling_average_3, rolling_average_7, rolling_average_14, rolling_average_30, monthly_average, quarterly_average, withdrawal_growth_rate, cash_remaining_percentage, festival_weight, holiday_weight, salary_day_weight, weather_weight, event_weight, atm_type_encoded, city_encoded, days_since_last_refill, cash_utilisation
+
+TEST METRICS
+------------
+Total test records: 21,140
+MAE: 76,448.91
+MSE: 15,180,915,834.67
+RMSE: 123,210.86
+MAPE: 17.55%
+R2 Score: 0.8471
+
+ERROR SUMMARY
+-------------
+Average absolute error: 76,448.91
+Maximum absolute error: 1,259,134.53
+Minimum absolute error: 5.91
+Best prediction: ATM0064 on 2025-12-25 (0.00%)
+Worst prediction: ATM0065 on 2025-12-18 (171.95%)
+Rows above 20% error: 7,465 (35.31%)
+
+CONCLUSION
+----------
+The model is a strong forecasting candidate, subject to live-data validation.
+The chronological holdout is the main overfitting check; compare this result with cross-validation before deployment.
+The model should not be called overfit or underfit from one holdout alone; add rolling time-series validation and compare train versus test error.
+
+RECOMMENDATIONS
+---------------
+* Add real ATM cash-out/refill logs, outages, bank holidays, weather by location, and cash-in-transit lead times.
+* Tune Gradient Boosting, XGBoost or LightGBM against the Random Forest baseline using time-series cross-validation.
+* Keep lag and rolling features strictly prior-only; fit transformations on training data only.
+* Treat anomalies as operational signals. Compare training with anomaly rows retained, capped, and separately modelled.
+* Optimise business metrics too: stockout rate, emergency refill rate, excess cash, and service-level attainment.

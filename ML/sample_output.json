@@ -1,0 +1,59 @@
+{
+    "atm_id": "ATM001",
+    "forecast": {
+        "forecast_horizon": "7 Days",
+        "daily_forecast": [
+            578721.74,
+            570305.74,
+            599777.82,
+            618961.89,
+            538832.89,
+            591303.94,
+            557158.99
+        ],
+        "total_forecast": 4055063.01,
+        "confidence": 0.82,
+        "prediction_interval": [
+            3763098.47,
+            4347027.55
+        ]
+    },
+    "decision": {
+        "current_cash": 850000.0,
+        "forecast_horizon": "7 Days",
+        "daily_forecast": [
+            578721.74,
+            570305.74,
+            599777.82,
+            618961.89,
+            538832.89,
+            591303.94,
+            557158.99
+        ],
+        "total_forecast": 4055063.01,
+        "cash_after_forecast": -3205063.01,
+        "safety_threshold": 144000.0,
+        "next_cash_van_route": "2026-08-05",
+        "will_last_until_route": false,
+        "recommended_refill_amount": 3349063.01,
+        "recommended_refill_date": "2026-08-05",
+        "priority": "CRITICAL",
+        "confidence": 0.76,
+        "reason": [
+            "Projected cash balance falls below the configured safety threshold.",
+            "Peak daily withdrawal is higher than the normal service cushion.",
+            "Cash is expected to breach the emergency replenishment boundary before the next route."
+        ],
+        "atm_id": "ATM001"
+    },
+    "route_group": {
+        "route_id": "HYD_ROUTE_01",
+        "route_date": "2026-08-01",
+        "vehicles": 1,
+        "stops": [
+            "ATM001"
+        ],
+        "sequence": 1,
+        "optimizer": "heuristic-fallback"
+    }
+}

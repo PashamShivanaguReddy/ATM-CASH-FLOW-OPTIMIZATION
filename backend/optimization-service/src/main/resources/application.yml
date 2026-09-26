@@ -1,0 +1,18 @@
+spring:
+  application.name: optimization-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa.hibernate.ddl-auto: validate
+server.port: ${SERVER_PORT:8089}
+service.url: ${SERVICE_URL:http://localhost:8089}
+management.endpoints.web.exposure.include: health,info
+springdoc.swagger-ui.path: /swagger-ui.html
+logging.level.com.atm: ${LOG_LEVEL:INFO}
+optimization:
+  default-safety-reserve: ${OPTIMIZATION_DEFAULT_SAFETY_RESERVE:0}
+  refill-lead-days: ${OPTIMIZATION_REFILL_LEAD_DAYS:0}
+  medium-refill-ratio: ${OPTIMIZATION_MEDIUM_REFILL_RATIO:0.25}
+  high-refill-ratio: ${OPTIMIZATION_HIGH_REFILL_RATIO:0.50}
+  critical-refill-ratio: ${OPTIMIZATION_CRITICAL_REFILL_RATIO:0.75}

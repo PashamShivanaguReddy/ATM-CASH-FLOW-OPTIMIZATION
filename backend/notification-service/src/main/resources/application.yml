@@ -1,0 +1,7 @@
+spring:
+  application.name: notification-service
+server.port: ${SERVER_PORT:8091}
+service.url: ${SERVICE_URL:http://localhost:8091}
+management.endpoints.web.exposure.include: health,info
+springdoc.swagger-ui.path: /swagger-ui.html
+logging.level.com.atm: ${LOG_LEVEL:INFO}

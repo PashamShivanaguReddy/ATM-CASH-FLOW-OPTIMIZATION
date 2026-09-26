@@ -1,0 +1,29 @@
+spring:
+  application.name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+            allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+            allowedHeaders: [Authorization, Content-Type, X-Correlation-ID]
+            exposedHeaders: [X-Correlation-ID]
+            allowCredentials: true
+server.port: ${SERVER_PORT:8080}
+management.endpoints.web.exposure.include: health,info
+logging.level.com.atm: ${LOG_LEVEL:INFO}
+jwt.secret: ${JWT_SECRET}
+gateway.rate-limit.requests-per-minute: ${GATEWAY_RATE_LIMIT_REQUESTS_PER_MINUTE:120}
+services:
+  auth.url: ${AUTH_SERVICE_URL:http://localhost:8081}
+  user.url: ${USER_SERVICE_URL:http://localhost:8082}
+  bank.url: ${BANK_SERVICE_URL:http://localhost:8083}
+  atm.url: ${ATM_SERVICE_URL:http://localhost:8084}
+  transaction.url: ${TRANSACTION_SERVICE_URL:http://localhost:8085}
+  cash-inventory.url: ${CASH_INVENTORY_SERVICE_URL:http://localhost:8086}
+  prediction.url: ${PREDICTION_SERVICE_URL:http://localhost:8087}
+  alert.url: ${ALERT_SERVICE_URL:http://localhost:8088}
+  optimization.url: ${OPTIMIZATION_SERVICE_URL:http://localhost:8089}
+  analytics.url: ${ANALYTICS_SERVICE_URL:http://localhost:8092}

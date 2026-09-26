@@ -1,0 +1,101 @@
+atm_id,bank_name,city,state,locality,latitude,longitude,atm_type,cash_capacity,installation_year,average_daily_withdrawal,cash_replenishment_threshold,operating_hours
+ATM0001,SBI,Hyderabad,Telangana,Samra Marg,17.341487,78.499329,IT Park,2000000,2018,195,602896,24x7
+ATM0002,SBI,Bengaluru,Karnataka,Gupta Chowk,13.030466,77.57701,Residential,500000,2015,122,159313,24x7
+ATM0003,Axis,Chennai,Tamil Nadu,Dhawan Ganj,13.078813,80.260706,IT Park,1000000,2018,233,270900,24x7
+ATM0004,Union Bank,Mumbai,Maharashtra,Chadha Ganj,19.139961,72.932783,Hospital,1500000,2016,232,508554,24x7
+ATM0005,SBI,Delhi,Delhi,Comar Street,28.584443,77.161396,IT Park,500000,2015,291,109241,24x7
+ATM0006,PNB,Pune,Maharashtra,Sridhar Road,18.515458,73.915844,Bus Stand,1000000,2021,256,300857,24x7
+ATM0007,Axis,Visakhapatnam,Andhra Pradesh,Bhatti Circle,17.688467,83.265119,IT Park,1000000,2016,336,328606,24x7
+ATM0008,Union Bank,Kolkata,West Bengal,Dutta Chowk,22.516927,88.306772,Tourist Area,1500000,2022,236,318666,24x7
+ATM0009,Union Bank,Ahmedabad,Gujarat,Edwin,22.980062,72.509518,Railway Station,1500000,2019,178,451720,24x7
+ATM0010,Union Bank,Jaipur,Rajasthan,Chawla Path,26.962459,75.740687,IT Park,1000000,2014,192,280303,24x7
+ATM0011,PNB,Hyderabad,Telangana,Sane Road,17.340641,78.408171,Bus Stand,1000000,2023,164,221549,24x7
+ATM0012,Canara,Bengaluru,Karnataka,Sidhu Nagar,12.994969,77.608903,Bus Stand,750000,2020,159,243426,24x7
+ATM0013,Union Bank,Chennai,Tamil Nadu,Jha Zila,13.064899,80.218598,Mall,1000000,2013,406,205813,24x7
+ATM0014,Union Bank,Mumbai,Maharashtra,Ahluwalia,19.123757,72.906374,Market Area,2000000,2022,307,437811,24x7
+ATM0015,Axis,Delhi,Delhi,Khare Circle,28.587219,77.139117,Tourist Area,2000000,2022,215,424338,24x7
+ATM0016,Union Bank,Pune,Maharashtra,Sunder Road,18.559389,73.879055,College,2000000,2013,134,637461,24x7
+ATM0017,SBI,Visakhapatnam,Andhra Pradesh,Sood Circle,17.684414,83.139232,Residential,2000000,2022,76,656029,24x7
+ATM0018,SBI,Kolkata,West Bengal,Kale Path,22.565829,88.291023,Village,1000000,2015,84,244566,24x7
+ATM0019,Bank of Baroda,Ahmedabad,Gujarat,Kaur Ganj,23.099503,72.636425,Tourist Area,1000000,2022,302,339185,24x7
+ATM0020,SBI,Jaipur,Rajasthan,Wagle,26.894237,75.734631,Residential,750000,2024,173,200507,24x7
+ATM0021,SBI,Hyderabad,Telangana,Tiwari,17.343469,78.527055,Mall,500000,2024,222,147891,24x7
+ATM0022,Union Bank,Bengaluru,Karnataka,Rao Circle,12.967242,77.654314,Railway Station,750000,2014,310,159675,24x7
+ATM0023,Axis,Chennai,Tamil Nadu,Varma Chowk,13.158365,80.310602,Tourist Area,1500000,2011,211,505560,24x7
+ATM0024,Axis,Mumbai,Maharashtra,Venkataraman Circle,19.102756,72.906662,College,1000000,2011,201,310906,24x7
+ATM0025,HDFC,Delhi,Delhi,Bhardwaj Road,28.568679,77.16042,Tourist Area,500000,2020,240,128061,24x7
+ATM0026,Union Bank,Pune,Maharashtra,Khanna,18.592557,73.883129,Village,2000000,2014,59,469880,24x7
+ATM0027,Axis,Visakhapatnam,Andhra Pradesh,Badami Nagar,17.609451,83.215208,IT Park,1000000,2019,276,204002,24x7
+ATM0028,SBI,Kolkata,West Bengal,Vohra Nagar,22.524997,88.326481,Residential,1000000,2021,140,313296,24x7
+ATM0029,Axis,Ahmedabad,Gujarat,Kata Street,23.093907,72.630568,Tourist Area,1000000,2024,152,319102,24x7
+ATM0030,Bank of Baroda,Jaipur,Rajasthan,Srivastava Road,26.919359,75.799119,Market Area,750000,2012,192,174105,24x7
+ATM0031,Canara,Hyderabad,Telangana,Dhar Street,17.423627,78.555427,Hospital,1500000,2017,212,481240,24x7
+ATM0032,PNB,Bengaluru,Karnataka,Magar Chowk,13.050138,77.666587,IT Park,2000000,2019,303,498419,24x7
+ATM0033,ICICI,Chennai,Tamil Nadu,Golla Circle,13.139467,80.306305,Mall,2000000,2014,281,614511,24x7
+ATM0034,Canara,Mumbai,Maharashtra,Sur Nagar,19.088232,72.907882,Mall,1500000,2018,429,466213,24x7
+ATM0035,Bank of Baroda,Delhi,Delhi,Doshi Marg,28.617663,77.221141,Railway Station,750000,2015,219,229944,24x7
+ATM0036,ICICI,Pune,Maharashtra,Guha,18.45632,73.924869,Mall,500000,2014,392,155932,24x7
+ATM0037,HDFC,Visakhapatnam,Andhra Pradesh,Rajagopal Road,17.625527,83.193289,College,1500000,2016,107,452048,24x7
+ATM0038,Union Bank,Kolkata,West Bengal,Lanka Path,22.60149,88.319248,Airport,1000000,2013,316,275525,24x7
+ATM0039,Axis,Ahmedabad,Gujarat,Maharaj Nagar,22.943446,72.57738,Railway Station,1500000,2024,321,418637,24x7
+ATM0040,Canara,Jaipur,Rajasthan,Vala Path,26.935216,75.841567,Airport,500000,2017,346,144215,24x7
+ATM0041,SBI,Hyderabad,Telangana,Bansal Road,17.449063,78.440282,IT Park,1500000,2021,271,376345,24x7
+ATM0042,Axis,Bengaluru,Karnataka,Reddy Marg,12.91508,77.522001,Bus Stand,1000000,2024,145,305711,24x7
+ATM0043,Bank of Baroda,Chennai,Tamil Nadu,Saini Circle,13.113233,80.300391,Airport,750000,2021,481,199765,24x7
+ATM0044,Bank of Baroda,Mumbai,Maharashtra,Anand Street,19.143662,72.892439,Bus Stand,500000,2010,132,122061,24x7
+ATM0045,Axis,Delhi,Delhi,Krish Street,28.58188,77.150337,Mall,2000000,2013,259,587089,24x7
+ATM0046,Axis,Pune,Maharashtra,Bhalla,18.444527,73.842978,IT Park,750000,2012,326,176869,24x7
+ATM0047,ICICI,Visakhapatnam,Andhra Pradesh,Kara Circle,17.763732,83.237686,Market Area,2000000,2024,180,435049,24x7
+ATM0048,Axis,Kolkata,West Bengal,Kurian Zila,22.603549,88.355717,Hospital,1500000,2021,116,462792,24x7
+ATM0049,Union Bank,Ahmedabad,Gujarat,Dara Circle,23.010429,72.524341,Market Area,1000000,2023,236,331603,24x7
+ATM0050,Bank of Baroda,Jaipur,Rajasthan,Rajagopal,26.87147,75.861583,IT Park,500000,2011,241,104560,24x7
+ATM0051,Axis,Hyderabad,Telangana,Ramesh Chowk,17.417312,78.48198,Village,750000,2012,69,241515,24x7
+ATM0052,Canara,Bengaluru,Karnataka,Loke,12.92871,77.621609,Mall,500000,2013,271,138174,24x7
+ATM0053,PNB,Chennai,Tamil Nadu,Kibe Road,13.131469,80.342231,Mall,750000,2014,258,204394,24x7
+ATM0054,SBI,Mumbai,Maharashtra,Viswanathan Road,19.015101,72.86346,Market Area,2000000,2012,190,685478,24x7
+ATM0055,PNB,Delhi,Delhi,Dyal Circle,28.692009,77.219647,IT Park,2000000,2024,234,549507,24x7
+ATM0056,HDFC,Pune,Maharashtra,Goel Ganj,18.482637,73.800936,Mall,750000,2022,350,191033,24x7
+ATM0057,SBI,Visakhapatnam,Andhra Pradesh,Sankaran Nagar,17.759425,83.268226,Bus Stand,500000,2015,133,157118,24x7
+ATM0058,HDFC,Kolkata,West Bengal,Balay Street,22.566088,88.381449,Hospital,500000,2020,158,103332,24x7
+ATM0059,Axis,Ahmedabad,Gujarat,Vala Circle,23.043284,72.54331,Market Area,500000,2010,343,127124,24x7
+ATM0060,Axis,Jaipur,Rajasthan,Sahota Chowk,26.912917,75.826747,Hospital,1500000,2016,219,302076,24x7
+ATM0061,Axis,Hyderabad,Telangana,Chada Road,17.307382,78.470871,Hospital,2000000,2013,163,473272,24x7
+ATM0062,PNB,Bengaluru,Karnataka,Gole,12.894174,77.614997,Railway Station,500000,2018,229,139191,24x7
+ATM0063,Bank of Baroda,Chennai,Tamil Nadu,Handa Marg,13.147484,80.292618,Mall,2000000,2017,287,430876,24x7
+ATM0064,HDFC,Mumbai,Maharashtra,Dhaliwal Marg,19.049979,72.942331,Mall,750000,2020,335,190809,24x7
+ATM0065,ICICI,Delhi,Delhi,Gandhi Nagar,28.614913,77.276992,Hospital,1500000,2014,129,320400,24x7
+ATM0066,SBI,Pune,Maharashtra,Sarraf Nagar,18.47496,73.792902,Bus Stand,500000,2021,130,111604,24x7
+ATM0067,Axis,Visakhapatnam,Andhra Pradesh,Contractor Chowk,17.728521,83.270022,Hospital,2000000,2022,221,697599,24x7
+ATM0068,PNB,Kolkata,West Bengal,Kale Marg,22.63932,88.343792,Airport,1500000,2020,484,400281,24x7
+ATM0069,Union Bank,Ahmedabad,Gujarat,Mall Circle,23.089838,72.51138,College,1500000,2011,126,495815,24x7
+ATM0070,Bank of Baroda,Jaipur,Rajasthan,Kadakia Ganj,26.894014,75.730176,IT Park,2000000,2022,363,407424,24x7
+ATM0071,Union Bank,Hyderabad,Telangana,Char Path,17.335159,78.408869,Railway Station,1500000,2011,260,416429,24x7
+ATM0072,HDFC,Bengaluru,Karnataka,Datta Circle,13.012295,77.634232,Railway Station,1000000,2020,252,221642,24x7
+ATM0073,SBI,Chennai,Tamil Nadu,Sankaran Circle,13.113991,80.245642,Residential,1000000,2012,82,250122,24x7
+ATM0074,Bank of Baroda,Mumbai,Maharashtra,Chander Chowk,19.12062,72.810838,College,2000000,2023,173,670524,24x7
+ATM0075,ICICI,Delhi,Delhi,Seth Street,28.623558,77.242536,Hospital,750000,2012,249,163569,24x7
+ATM0076,Bank of Baroda,Pune,Maharashtra,Tata Circle,18.509574,73.915013,Airport,1000000,2011,347,263662,24x7
+ATM0077,Bank of Baroda,Visakhapatnam,Andhra Pradesh,Bhavsar Road,17.728983,83.268741,IT Park,1000000,2016,214,242824,24x7
+ATM0078,Union Bank,Kolkata,West Bengal,Bhandari Path,22.560345,88.330571,College,500000,2017,160,155439,24x7
+ATM0079,HDFC,Ahmedabad,Gujarat,Char Ganj,22.967649,72.524181,Bus Stand,2000000,2023,269,661756,24x7
+ATM0080,SBI,Jaipur,Rajasthan,Reddy Street,26.953442,75.732265,Railway Station,1000000,2012,210,213681,24x7
+ATM0081,Canara,Hyderabad,Telangana,Seshadri Chowk,17.31261,78.423735,Residential,750000,2011,150,162347,24x7
+ATM0082,Canara,Bengaluru,Karnataka,Maharaj Ganj,12.940893,77.522891,IT Park,750000,2011,266,191883,24x7
+ATM0083,Bank of Baroda,Chennai,Tamil Nadu,Dara,13.139606,80.220369,Hospital,1500000,2012,245,472567,24x7
+ATM0084,Bank of Baroda,Mumbai,Maharashtra,Bhandari Circle,19.082123,72.907888,Airport,500000,2010,463,157541,24x7
+ATM0085,Axis,Delhi,Delhi,Viswanathan Nagar,28.574412,77.195089,Mall,2000000,2017,332,416334,24x7
+ATM0086,ICICI,Pune,Maharashtra,Dasgupta Circle,18.526181,73.896342,IT Park,1500000,2015,252,463536,24x7
+ATM0087,Axis,Visakhapatnam,Andhra Pradesh,Chokshi Path,17.750505,83.244044,Bus Stand,2000000,2020,174,515263,24x7
+ATM0088,Union Bank,Kolkata,West Bengal,Doctor Street,22.578313,88.286393,Airport,500000,2016,453,173806,24x7
+ATM0089,Canara,Ahmedabad,Gujarat,Sachdeva Road,23.010436,72.505501,Tourist Area,500000,2020,306,140937,24x7
+ATM0090,PNB,Jaipur,Rajasthan,Kalla Marg,26.976023,75.74042,Village,750000,2018,60,160293,24x7
+ATM0091,Union Bank,Hyderabad,Telangana,Ganguly Circle,17.410004,78.504778,Hospital,2000000,2016,148,673561,24x7
+ATM0092,Bank of Baroda,Bengaluru,Karnataka,Chad Chowk,13.004051,77.636022,Tourist Area,2000000,2021,226,500800,24x7
+ATM0093,Bank of Baroda,Chennai,Tamil Nadu,Gola Chowk,13.045459,80.241379,Mall,1000000,2011,423,230349,24x7
+ATM0094,Canara,Mumbai,Maharashtra,Joshi Street,19.069093,72.900642,Bus Stand,2000000,2014,203,542880,24x7
+ATM0095,Canara,Delhi,Delhi,Gara Marg,28.539558,77.281666,College,2000000,2023,116,460885,24x7
+ATM0096,Canara,Pune,Maharashtra,Iyengar Nagar,18.501624,73.806081,Airport,1500000,2019,358,383715,24x7
+ATM0097,ICICI,Visakhapatnam,Andhra Pradesh,Basu Circle,17.643464,83.239723,Village,2000000,2015,49,518337,24x7
+ATM0098,Canara,Kolkata,West Bengal,Gill Zila,22.529199,88.424127,IT Park,2000000,2015,332,527065,24x7
+ATM0099,Canara,Ahmedabad,Gujarat,Sidhu Nagar,23.102263,72.520382,Bus Stand,1500000,2019,196,335605,24x7
+ATM0100,Canara,Jaipur,Rajasthan,Keer Zila,26.860236,75.763723,Railway Station,1000000,2014,256,203848,24x7

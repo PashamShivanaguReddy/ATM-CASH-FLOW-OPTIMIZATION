@@ -1,0 +1,13 @@
+spring:
+  application.name: cash-inventory-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa.hibernate.ddl-auto: validate
+  flyway.enabled: ${FLYWAY_ENABLED:true}
+server.port: ${SERVER_PORT:8086}
+service.url: ${SERVICE_URL:http://localhost:8086}
+management.endpoints.web.exposure.include: health,info
+springdoc.swagger-ui.path: /swagger-ui.html
+logging.level.com.atm: ${LOG_LEVEL:INFO}

@@ -1,0 +1,13 @@
+spring:
+  application.name: analytics-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa.hibernate.ddl-auto: validate
+  flyway.enabled: false
+server.port: ${SERVER_PORT:8092}
+service.url: ${SERVICE_URL:http://localhost:8092}
+management.endpoints.web.exposure.include: health,info
+springdoc.swagger-ui.path: /swagger-ui.html
+logging.level.com.atm: ${LOG_LEVEL:INFO}

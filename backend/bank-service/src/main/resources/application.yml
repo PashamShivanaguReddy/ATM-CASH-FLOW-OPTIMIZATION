@@ -1,0 +1,10 @@
+spring:
+  application.name: bank-service
+server.port: ${SERVER_PORT:8083}
+service.url: ${SERVICE_URL:http://localhost:8083}
+management.endpoints.web.exposure.include: health,info
+springdoc.swagger-ui.path: /swagger-ui.html
+spring.datasource.url: ${DB_URL}
+spring.datasource.username: ${DB_USERNAME}
+spring.datasource.password: ${DB_PASSWORD}
+logging.level.com.atm: ${LOG_LEVEL:INFO}
