@@ -23,3 +23,13 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# ML generated datasets and model artifacts
+ML/project/models/*.pkl
+ML/ml_dataset*.csv
+ML/ml_train.csv
+ML/ml_test.csv
+ML/transactions*.csv
+ML/atm_refill.csv
+ML/model_evaluation/prediction_results.csv
+ML/project/prediction_results.csv
