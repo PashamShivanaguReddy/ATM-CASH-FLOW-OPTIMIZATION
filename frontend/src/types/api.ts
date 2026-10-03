@@ -1,26 +1,18 @@
-export interface ApiResponse<T> {
+export interface ApiError {
+  message: string;
+  status?: number;
+  code?: string;
+}
+
+export interface ApiEnvelope<T> {
   success: boolean;
   message: string;
   data: T;
-  timestamp: string;
-  path: string;
-}
-
-export interface ApiError {
-  success: false;
-  message: string;
-  errorCode?: string;
-  timestamp?: string;
-  path?: string;
-  details?: Record<string, string>;
 }
 
 export interface PaginatedResponse<T> {
-  content: T[];
+  items: T[];
   page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  first: boolean;
-  last: boolean;
+  pageSize: number;
+  total: number;
 }

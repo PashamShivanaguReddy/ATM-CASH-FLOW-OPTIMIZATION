@@ -1,71 +1,141 @@
-import React from 'react';
-import { Sliders, DollarSign, Truck, Sparkles } from 'lucide-react';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Settings2 } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "../components/ui/Button";
+import { Card, CardHeader } from "../components/ui/Card";
+import { ConfirmationModal } from "../components/ui/ConfirmationModal";
+import { EmptyState } from "../components/ui/EmptyState";
+import { ErrorState } from "../components/ui/ErrorState";
+import { Loading } from "../components/ui/Loading";
+import { Modal } from "../components/ui/Modal";
+import { RiskBadge } from "../components/ui/RiskBadge";
+import { Select } from "../components/ui/Select";
+import { StatusBadge } from "../components/ui/StatusBadge";
+import { Table, type TableColumn } from "../components/ui/Table";
+import { useToast } from "../context/ToastContext";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { apiErrorMessage } from "../services/api";
+import { getAllAtms } from "../services/atmService";
+import { getRefills } from "../services/refillService";
+import { approveRecommendation, generateRecommendation, getRecommendations, rejectRecommendation } from "../services/optimizationService";
+import type { OptimizationRecommendation } from "../types/optimization";
+import { inrFormatter } from "../utils/formatters";
 
-export const Optimization: React.FC = () => {
-  return (
-    <div className="space-y-6 text-left">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Cash Optimization Engine</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Minimizing idle holding cost and transportation overhead while eliminating cash-outs
-          </p>
-        </div>
-        <Button leftIcon={<Sparkles className="w-4 h-4" />}>Run Optimization Solver</Button>
-      </div>
+type Decision = { id: number; atmId: number; decision: "approve" | "reject" };
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-600">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">Holding Cost Savings</span>
-              <p className="text-lg font-bold text-slate-900 mt-0.5">$32,450 / mo</p>
-            </div>
-          </div>
-        </Card>
+export function Optimization() {
+	useDocumentTitle("Optimization");
+	const queryClient = useQueryClient();
+	const { showToast } = useToast();
+	const [decision, setDecision] = useState<Decision | null>(null);
+	const [generateOpen, setGenerateOpen] = useState(false);
+	const [selectedAtmId, setSelectedAtmId] = useState("");
+	const [refillDate, setRefillDate] = useState("");
+	const recommendations = useQuery({ queryKey: ["optimization", "recommendations"], queryFn: getRecommendations });
+	const atms = useQuery({ queryKey: ["atms", "optimization-options"], queryFn: getAllAtms });
+	const atmById = new Map((atms.data ?? []).map((atm) => [atm.id, atm]));
 
-        <Card>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-blue-50 text-blue-600">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">Refill Trip Reductions</span>
-              <p className="text-lg font-bold text-slate-900 mt-0.5">-18% Dispatches</p>
-            </div>
-          </div>
-        </Card>
+	const refreshRecommendations = async () => Promise.all([
+		queryClient.invalidateQueries({ queryKey: ["optimization", "recommendations"] }),
+		queryClient.invalidateQueries({ queryKey: ["analytics", "recommendations"] }),
+		queryClient.invalidateQueries({ queryKey: ["dashboard", "summary"] }),
+	]);
+	const refreshLinkedRefill = async (recommendationId: number) => {
+		for (let attempt = 0; attempt < 4; attempt += 1) {
+			try {
+				const currentRefills = await getRefills();
+				queryClient.setQueryData(["refills"], currentRefills);
+				const linked = currentRefills.find((refill) => refill.recommendationId === recommendationId);
+				if (linked) return linked;
+			} catch {}
+			if (attempt < 3) await new Promise((resolve) => window.setTimeout(resolve, 750));
+		}
+		return undefined;
+	};
+	const generate = useMutation({
+		mutationFn: () => generateRecommendation(Number(selectedAtmId), refillDate ? { recommendedRefillDate: refillDate } : {}),
+		onSuccess: async () => { await refreshRecommendations(); setGenerateOpen(false); setRefillDate(""); showToast("Recommendation generated by the optimization service."); },
+		onError: async (error) => { await refreshRecommendations(); showToast(apiErrorMessage(error, "Recommendation could not be generated."), "error"); },
+	});
+	const updateDecision = useMutation({
+		mutationFn: ({ id, decision: action }: Decision) => action === "approve" ? approveRecommendation(id) : rejectRecommendation(id),
+		onSuccess: async (updated, variables) => {
+			await refreshRecommendations();
+			let linkedRefill: Awaited<ReturnType<typeof refreshLinkedRefill>>;
+			if (variables.decision === "approve") {
+				await Promise.all([
+					queryClient.invalidateQueries({ queryKey: ["refills"] }),
+					queryClient.invalidateQueries({ queryKey: ["analytics", "refills"] }),
+				]);
+				linkedRefill = await refreshLinkedRefill(updated.id);
+			}
+			setDecision(null);
+			showToast(variables.decision === "approve"
+				? linkedRefill
+					? `Recommendation approved; REF-${linkedRefill.id} is ${linkedRefill.status.toLowerCase()}.`
+					: "Recommendation approved. Refill creation is still processing; refresh Refills to confirm its current state."
+				: "Recommendation rejected.");
+		},
+		onError: async (error, variables) => {
+			let current: OptimizationRecommendation | undefined;
+			try { current = (await getRecommendations()).find((item) => item.id === variables.id); } catch {}
+			await refreshRecommendations();
+			if (variables.decision === "approve") {
+				await Promise.all([
+					queryClient.invalidateQueries({ queryKey: ["refills"] }),
+					queryClient.invalidateQueries({ queryKey: ["analytics", "refills"] }),
+				]);
+			}
+			const expected = variables.decision === "approve" ? "APPROVED" : "REJECTED";
+			if (current?.status === expected) {
+				setDecision(null);
+				if (variables.decision === "approve") {
+					const linkedRefill = await refreshLinkedRefill(current.id);
+					showToast(linkedRefill
+						? `Recommendation is already approved; REF-${linkedRefill.id} is ${linkedRefill.status.toLowerCase()}.`
+						: "Recommendation is already approved. Its linked refill is not visible yet; check Refills again shortly.");
+				} else showToast("Recommendation is already rejected.");
+				return;
+			}
+			showToast(current && current.status !== "PENDING"
+				? `Recommendation state refreshed: ${current.status.toLowerCase()}.`
+				: apiErrorMessage(error, "Recommendation status could not be confirmed."), "error");
+		},
+	});
 
-        <Card>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-purple-50 text-purple-600">
-              <Sliders className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">Cash Availability SLA</span>
-              <p className="text-lg font-bold text-slate-900 mt-0.5">99.94%</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+	const columns: TableColumn<OptimizationRecommendation>[] = [
+		{ key: "atm", header: "ATM", render: (row) => <div><Link className="font-semibold text-moss hover:underline" to={`/atms/${row.atmId}`}>{atmById.get(row.atmId)?.atmCode ?? `ATM ${row.atmId}`}</Link><span className="mt-1 block text-xs text-muted">{atmById.get(row.atmId)?.location ?? "Location unavailable"}</span></div> },
+		{ key: "cash", header: "Current cash", render: (row) => <span className="font-semibold">{inrFormatter.format(row.currentCash)}</span> },
+		{ key: "demand", header: "Predicted demand", render: (row) => <span>{inrFormatter.format(row.predictedDemand)}</span> },
+		{ key: "reserve", header: "Safety reserve", render: (row) => <span>{inrFormatter.format(row.safetyReserve)}</span> },
+		{ key: "refill", header: "Recommended refill", render: (row) => <span className="font-semibold text-ink">{inrFormatter.format(row.recommendedRefillAmount)}</span> },
+		{ key: "date", header: "Recommended date", render: (row) => <span className="text-xs text-muted">{row.recommendedRefillDate}</span> },
+		{ key: "priority", header: "Priority / risk", render: (row) => <RiskBadge level={row.priority} /> },
+		{ key: "reason", header: "Reason", render: (row) => <span className="block max-w-[260px] text-xs leading-5 text-muted">{row.reason}</span> },
+		{ key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+		{ key: "actions", header: "Decision", render: (row) => row.status !== "PENDING" ? <span className="text-xs text-muted">Completed</span> : <div className="flex gap-2"><Button size="sm" variant="secondary" onClick={() => setDecision({ id: row.id, atmId: row.atmId, decision: "approve" })}>Approve</Button><Button size="sm" variant="danger" onClick={() => setDecision({ id: row.id, atmId: row.atmId, decision: "reject" })}>Reject</Button></div> },
+	];
+	const selectedAtm = atms.data?.find((atm) => String(atm.id) === selectedAtmId);
 
-      <Card title="Linear Programming Optimization Formulation">
-        <div className="space-y-3 text-xs text-slate-600">
-          <p>
-            The optimization microservice solves mixed-integer linear programs (MILP) balancing:
-          </p>
-          <ul className="list-disc pl-5 space-y-1 text-slate-700">
-            <li><strong>Holding cost:</strong> Daily interest lost on unwithdrawn idle cash sitting inside vaults.</li>
-            <li><strong>Transit cost:</strong> Fixed dispatch and security escort fees per replenishment route.</li>
-            <li><strong>Cash-out penalty:</strong> Reputation risk and regulatory penalties for downtime.</li>
-          </ul>
-        </div>
-      </Card>
-    </div>
-  );
-};
+	return (
+		<div className="page-enter space-y-6">
+			<header className="flex flex-wrap items-end justify-between gap-4">
+				<div><p className="font-mono text-[10px] uppercase tracking-[0.12em] text-moss">Cash planning</p><h1 className="mt-2 text-2xl font-bold text-ink sm:text-[28px]">Optimization recommendations</h1><p className="mt-1 text-sm text-muted">Backend-generated refill timing, quantities, priorities, and rationale.</p></div>
+				<Button onClick={() => setGenerateOpen(true)} disabled={atms.isPending || atms.isError || !atms.data?.length}><Plus aria-hidden="true" className="size-4" />Generate recommendation</Button>
+			</header>
+			<Card className="overflow-hidden"><CardHeader title="Refill decisions" description={`${recommendations.data?.filter((item) => item.status === "PENDING").length ?? "—"} pending review`} action={<span className="inline-flex items-center gap-2 text-xs text-muted"><Settings2 aria-hidden="true" className="size-4" />Decision authority remains on the backend</span>} />
+				{recommendations.isPending ? <Loading label="Loading optimization recommendations" /> : recommendations.isError ? <ErrorState title="Recommendations unavailable" message="The optimization service could not be reached." onRetry={() => void recommendations.refetch()} /> : recommendations.data.length === 0 ? <EmptyState title="No recommendations yet" message="Generate a recommendation for an ATM to begin review." /> : <div className="overflow-x-auto"><div className="min-w-[1450px]"><Table columns={columns} rows={recommendations.data} rowKey={(row) => row.id} /></div></div>}
+			</Card>
+			<Modal open={generateOpen} onClose={() => setGenerateOpen(false)} title="Generate recommendation">
+				{atms.isPending ? <Loading label="Loading ATM options" /> : atms.isError ? <ErrorState title="ATM list unavailable" message="ATM choices could not be loaded." onRetry={() => void atms.refetch()} /> : <div className="space-y-4">
+					<Select label="ATM" value={selectedAtmId} placeholder="Select an ATM" options={(atms.data ?? []).map((atm) => ({ label: `${atm.atmCode} · ${atm.city}`, value: String(atm.id) }))} onChange={(event) => setSelectedAtmId(event.target.value)} />
+					<div className="grid gap-1.5"><label htmlFor="recommended-refill-date" className="text-sm font-semibold text-ink">Recommended date <span className="font-normal text-muted">(optional)</span></label><input id="recommended-refill-date" type="date" value={refillDate} onChange={(event) => setRefillDate(event.target.value)} className="h-10 rounded-md border border-line bg-white px-3 text-sm text-ink focus:border-moss focus:outline-none focus:ring-3 focus:ring-mint" /></div>
+					{selectedAtm && <p className="text-xs leading-5 text-muted">The optimization service will use {selectedAtm.atmCode} and its available prediction data to calculate the recommendation.</p>}
+					<div className="flex justify-end gap-2 pt-2"><Button variant="secondary" onClick={() => setGenerateOpen(false)} disabled={generate.isPending}>Cancel</Button><Button onClick={() => generate.mutate()} disabled={!selectedAtmId || generate.isPending}>{generate.isPending ? "Generating…" : "Generate"}</Button></div>
+				</div>}
+			</Modal>
+			<ConfirmationModal open={Boolean(decision)} title={decision?.decision === "approve" ? "Approve recommendation?" : "Reject recommendation?"} message={`This will mark the recommendation for ATM ${decision?.atmId ?? ""} as ${decision?.decision === "approve" ? "approved" : "rejected"}.`} confirmLabel={decision?.decision === "approve" ? "Approve" : "Reject"} destructive={decision?.decision === "reject"} pending={updateDecision.isPending} onClose={() => setDecision(null)} onConfirm={() => { if (decision) updateDecision.mutate(decision); }} />
+		</div>
+	);
+}

@@ -6,6 +6,9 @@ import com.atm.analytics.repository.*;
 import com.atm.domain.entity.*;
 import java.math.BigDecimal;
 import java.time.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -38,7 +41,24 @@ public class DashboardService {
     }
 
     public PageResponse<AtmStatusItem> atmStatus(Long bankId, Long atmId, int page, int size) {
-        return page(atms.search(bankId, atmId, pageRequest(page, size)), a -> new AtmStatusItem(a.getId(), a.getAtmCode(), a.getBank().getId(), a.getLocation(), a.getStatus(), a.getCurrentCash(), a.getMinimumCashThreshold(), a.getCurrentCash().compareTo(a.getMinimumCashThreshold()) <= 0, a.getCurrentCash().signum() == 0 || a.getStatus() == AtmStatus.OUT_OF_SERVICE));
+        var result = atms.search(bankId, atmId, pageRequest(page, size));
+        List<Long> atmIds = result.getContent().stream().map(ATM::getId).toList();
+        Map<Long, Integer> activeRiskRanks = new HashMap<>();
+        if (!atmIds.isEmpty()) {
+            alerts.findActiveRiskRanksByAtmIds(atmIds).forEach(row ->
+                    activeRiskRanks.put(((Number) row[0]).longValue(), ((Number) row[1]).intValue()));
+        }
+        return page(result, a -> {
+                boolean lowCash = a.getStatus() == AtmStatus.LOW_CASH
+                    || a.getCurrentCash().compareTo(a.getMinimumCashThreshold()) <= 0;
+            boolean critical = a.getCurrentCash().signum() == 0 || a.getStatus() == AtmStatus.OUT_OF_SERVICE;
+            int alertRiskRank = activeRiskRanks.getOrDefault(a.getId(), 0);
+            Severity riskLevel = critical || alertRiskRank >= 4 ? Severity.CRITICAL
+                    : alertRiskRank >= 3 || lowCash ? Severity.HIGH
+                    : alertRiskRank == 2 ? Severity.MEDIUM : Severity.LOW;
+            return new AtmStatusItem(a.getId(), a.getAtmCode(), a.getBank().getId(), a.getLocation(), a.getStatus(),
+                    a.getCurrentCash(), a.getMinimumCashThreshold(), lowCash, critical, riskLevel);
+        });
     }
 
     public PageResponse<DemandItem> cashDemand(Long bankId, Long atmId, LocalDate from, LocalDate to, int page, int size) {

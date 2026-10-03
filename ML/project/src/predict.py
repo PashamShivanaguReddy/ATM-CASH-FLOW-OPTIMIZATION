@@ -1,5 +1,6 @@
 """Prediction interface for the ATM 7-day forecasting engine."""
-from typing import Dict
+from functools import lru_cache
+from typing import Dict, Mapping, Optional
 
 import numpy as np
 import pandas as pd
@@ -19,22 +20,34 @@ def _normalize_atm_id(atm_id: str) -> str:
     return candidate
 
 
-def forecast_next_7_days(atm_id: str) -> Dict[str, object]:
+@lru_cache(maxsize=1)
+def load_forecast_model():
+    """Load the persisted models once per service process."""
+    return load_pickle(MODEL_PATH)
+
+
+def forecast_next_7_days(atm_id: str, features: Optional[Mapping[str, object]] = None) -> Dict[str, object]:
     """Produce a seven-day forecast for a specific ATM using the persisted horizon models."""
-    artifact = load_pickle(MODEL_PATH)
+    artifact = load_forecast_model()
     horizon_models = artifact["models"]
     feature_columns = artifact["feature_columns"]
     confidence = float(artifact.get("confidence", 0.82))
     interval_width = float(artifact.get("prediction_interval_width", max(0.05, min(0.18, (1.0 - confidence) * 0.40))))
-    normalized_atm_id = _normalize_atm_id(atm_id)
 
-    data = load_and_prepare_data(str(RAW_DATA_PATH))
-    atm_history = data[data["atm_id"] == normalized_atm_id].sort_values("date").reset_index(drop=True)
-    if atm_history.empty:
-        raise ValueError(f"No historical data found for ATM {normalized_atm_id}.")
+    if features:
+        normalized = {key: float(value) for key, value in features.items() if value is not None}
+        row = {column: normalized.get(column, 0.0) for column in feature_columns}
+        latest_feature_row = pd.DataFrame([row], columns=feature_columns)
+    else:
+        normalized_atm_id = _normalize_atm_id(atm_id)
+        data = load_and_prepare_data(str(RAW_DATA_PATH))
+        atm_history = data[data["atm_id"] == normalized_atm_id].sort_values("date").reset_index(drop=True)
+        if atm_history.empty:
+            raise ValueError(f"No historical data found for ATM {normalized_atm_id}.")
 
-    feature_frame, _ = build_model_input(atm_history, feature_columns)
-    latest_feature_row = feature_frame.iloc[-1:].copy()
+        feature_frame, _ = build_model_input(atm_history, feature_columns)
+        latest_feature_row = feature_frame.iloc[-1:].copy()
+
     daily_forecast = [
         round(float(np.maximum(0.0, model.predict(latest_feature_row)[0])), 2)
         for model in horizon_models

@@ -3,7 +3,8 @@ package com.atm.transaction.event;
 import com.atm.common.event.EventType;
 import com.atm.common.event.KafkaEventPublisher;
 import com.atm.common.event.TransactionCreatedEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,7 +15,7 @@ public class TransactionKafkaBridge {
         this.publisher = publisher;
     }
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publish(TransactionEvent event) {
         EventType type = EventType.valueOf(event.eventType());
         publisher.publish(type, new TransactionCreatedEvent(event.transactionId(), event.atmId(),

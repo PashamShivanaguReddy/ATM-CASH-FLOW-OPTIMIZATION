@@ -8,11 +8,13 @@ import com.atm.common.event.KafkaConfiguration;
 import com.atm.common.event.KafkaEventPublisher;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @Import({GlobalExceptionHandler.class, KafkaConfiguration.class, KafkaEventPublisher.class})
 @EntityScan("com.atm.domain.entity")
 @EnableJpaRepositories("com.atm.domain.repository")
+@EnableScheduling
 public class PredictionServiceApplication {
     public static void main(String[] args) { SpringApplication.run(PredictionServiceApplication.class, args); }
 }

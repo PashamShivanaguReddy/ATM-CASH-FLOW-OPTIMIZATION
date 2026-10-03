@@ -3,6 +3,7 @@ import com.atm.domain.entity.ATMTransaction;
 import com.atm.domain.entity.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,15 +12,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-public interface ATMTransactionRepository extends JpaRepository<ATMTransaction, Long> {
+public interface ATMTransactionRepository extends JpaRepository<ATMTransaction, Long>, JpaSpecificationExecutor<ATMTransaction> {
     Optional<ATMTransaction> findByTransactionId(String transactionId);
-
-        @Query("select t from ATMTransaction t where (:bankId is null or t.atm.bank.id = :bankId) "
-            + "and (:atmId is null or t.atm.id = :atmId) "
-	    + "and (:from is null or t.timestamp >= :from) and (:to is null or t.timestamp <= :to) "
-	    + "and (:type is null or t.transactionType = :type) and (:success is null or t.success = :success)")
-    Page<ATMTransaction> search(@Param("bankId") Long bankId, @Param("atmId") Long atmId, @Param("from") Instant from, @Param("to") Instant to,
-				@Param("type") TransactionType type, @Param("success") Boolean success, Pageable pageable);
 
     Page<ATMTransaction> findByAtmId(Long atmId, Pageable pageable);
     List<ATMTransaction> findByAtmIdAndTimestampBetween(Long atmId, Instant from, Instant to);

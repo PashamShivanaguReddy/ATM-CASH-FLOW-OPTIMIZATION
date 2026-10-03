@@ -1,32 +1,25 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { Landmark, Shield } from 'lucide-react';
+import { Outlet } from "react-router-dom";
+import flowlineMark from "../assets/flowline-mark.svg";
 
-export const AuthLayout: React.FC = () => {
+export function AuthLayout() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 text-slate-100">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/25 ring-4 ring-blue-500/20 mb-4">
-          <Landmark className="h-8 w-8" />
+    <main className="grid min-h-screen bg-canvas lg:grid-cols-[minmax(0,1.1fr)_minmax(420px,0.9fr)]">
+      <section className="relative hidden overflow-hidden bg-[#14221f] p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
+        <div className="absolute -right-28 top-1/4 size-[420px] rounded-full border border-white/[0.08]" />
+        <div className="absolute -right-10 top-[30%] size-[260px] rounded-full border border-white/[0.08]" />
+        <div className="relative flex items-center gap-3"><span className="grid size-10 place-items-center rounded-md bg-[#cce7da]"><img src={flowlineMark} alt="" className="size-5" /></span><span className="text-lg font-bold">Flowline</span></div>
+        <div className="relative max-w-xl pb-5">
+          <p className="font-mono text-xs uppercase tracking-[0.12em] text-[#a8d4bd]">ATM cash operations</p>
+          <h1 className="mt-5 text-4xl font-semibold leading-[1.1] tracking-tight xl:text-5xl">Keep every location ready for what comes next.</h1>
+          <p className="mt-5 max-w-md text-sm leading-6 text-white/60">A unified workspace for visibility across cash, service levels, and replenishment planning.</p>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          ATM Cash Flow Optimization
-        </h1>
-        <p className="mt-2 text-sm text-slate-400">
-          Enterprise Cash Inventory, Refill Operations & Microservices Portal
-        </p>
-      </div>
-
-      <main id="auth-content" className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow-2xl sm:rounded-2xl sm:px-10 border border-slate-200 text-slate-900">
-          <Outlet />
-        </div>
-
-        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
-          <Shield className="w-3.5 h-3.5 text-emerald-400" />
-          <span>256-Bit TLS Encrypted Banking Gateway</span>
-        </div>
-      </main>
-    </div>
+        <p className="relative text-xs text-white/35">Secure access for authorized operators.</p>
+      </section>
+      <section className="flex min-h-screen flex-col items-center justify-center px-5 py-12 sm:px-10">
+        <div className="mb-8 flex items-center gap-2.5 lg:hidden"><span className="grid size-9 place-items-center rounded-md bg-[#cce7da]"><img src={flowlineMark} alt="" className="size-5" /></span><span className="font-bold text-ink">Flowline</span></div>
+        <Outlet />
+        <p className="mt-10 text-center text-[11px] text-muted">ATM Cash Flow Optimization System</p>
+      </section>
+    </main>
   );
-};
+}

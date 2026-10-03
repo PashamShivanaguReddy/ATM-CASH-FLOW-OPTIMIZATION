@@ -63,6 +63,22 @@ class DashboardServiceTest {
         assertThat(result.totalElements()).isEqualTo(1);
         assertThat(result.content().get(0).lowCash()).isTrue();
         assertThat(result.content().get(0).bankId()).isEqualTo(7L);
+        assertThat(result.content().get(0).riskLevel()).isEqualTo(Severity.HIGH);
+    }
+
+    @Test
+    void atmStatusUsesHighestActiveAlertSeverityAsRiskLevel() {
+        ATM atm = new ATM();
+        atm.setId(11L); atm.setAtmCode("ATM-11"); atm.setLocation("Main branch");
+        atm.setStatus(AtmStatus.ACTIVE); atm.setCurrentCash(new BigDecimal("500"));
+        atm.setMinimumCashThreshold(new BigDecimal("100"));
+        Bank bank = new Bank(); bank.setId(7L); atm.setBank(bank);
+        when(atms.search(eq(7L), eq(11L), any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(atm), PageRequest.of(0, 25), 1));
+        when(alerts.findActiveRiskRanksByAtmIds(List.of(11L))).thenReturn(List.<Object[]>of(new Object[]{11L, 2}));
+
+        PageResponse<AtmStatusItem> result = service().atmStatus(7L, 11L, 0, 25);
+
+        assertThat(result.content().get(0).riskLevel()).isEqualTo(Severity.MEDIUM);
     }
 
     private DashboardService service() {

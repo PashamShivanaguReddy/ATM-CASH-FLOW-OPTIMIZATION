@@ -79,7 +79,7 @@ public class PredictionService {
             .filter(transaction -> Boolean.TRUE.equals(transaction.getSuccess())
                 && transaction.getTransactionType() == TransactionType.WITHDRAWAL)
             .toList();
-        Map<String, BigDecimal> features = features(history, predictionDate);
+        Map<String, BigDecimal> features = features(atm, history, predictionDate);
         MLPredictionRequest mlRequest = new MLPredictionRequest(atm.getAtmCode(), predictionDate, features);
         log.info("Prediction request atmCode={} predictionDate={} featureCount={}", atm.getAtmCode(), predictionDate, features.size());
         MLPredictionResponse mlResponse = mlClient.predict(mlRequest);
@@ -123,20 +123,80 @@ public class PredictionService {
             .stream().map(this::toDto).toList();
     }
 
-    private Map<String, BigDecimal> features(List<ATMTransaction> history, LocalDate predictionDate) {
-        BigDecimal historicalDemand = history.stream().map(ATMTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal averageDailyWithdrawal = historicalDemand.divide(BigDecimal.valueOf(HISTORY_DAYS), 2, RoundingMode.HALF_UP);
-        BigDecimal peakHourDemand = history.stream()
-            .collect(Collectors.groupingBy(transaction -> transaction.getTimestamp().atZone(ZoneOffset.UTC).getHour(),
-                Collectors.reducing(BigDecimal.ZERO, ATMTransaction::getAmount, BigDecimal::add)))
-            .values().stream().max(Comparator.naturalOrder()).orElse(BigDecimal.ZERO);
+    private Map<String, BigDecimal> features(ATM atm, List<ATMTransaction> history, LocalDate predictionDate) {
+        List<BigDecimal> successAmounts = history.stream()
+                .filter(transaction -> Boolean.TRUE.equals(transaction.getSuccess())
+                        && transaction.getTransactionType() == TransactionType.WITHDRAWAL)
+                .map(ATMTransaction::getAmount)
+                .sorted()
+                .toList();
+
+        BigDecimal historicalDemand = successAmounts.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal previousDayWithdrawal = successAmounts.isEmpty() ? BigDecimal.ZERO : successAmounts.get(successAmounts.size() - 1);
+        BigDecimal rollingAverage3 = average(lastN(successAmounts, 3));
+        BigDecimal rollingAverage7 = average(lastN(successAmounts, 7));
+        BigDecimal rollingAverage14 = average(lastN(successAmounts, 14));
+        BigDecimal rollingAverage30 = average(lastN(successAmounts, 30));
+        BigDecimal monthlyAverage = rollingAverage30;
+        BigDecimal quarterlyAverage = rollingAverage30;
+        BigDecimal previousDayBefore = successAmounts.size() >= 2 ? successAmounts.get(successAmounts.size() - 2) : BigDecimal.ZERO;
+        BigDecimal growthRate = previousDayBefore.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : previousDayWithdrawal.subtract(previousDayBefore).divide(previousDayBefore, 6, RoundingMode.HALF_UP);
+        BigDecimal cashCapacity = atm.getCashCapacity() == null ? BigDecimal.ZERO : atm.getCashCapacity();
+        BigDecimal currentCash = atm.getCurrentCash() == null ? BigDecimal.ZERO : atm.getCurrentCash();
+        BigDecimal cashRemainingPercentage = cashCapacity.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : currentCash.multiply(BigDecimal.valueOf(100)).divide(cashCapacity, 6, RoundingMode.HALF_UP);
+        BigDecimal cashUtilisation = BigDecimal.valueOf(100).subtract(cashRemainingPercentage).max(BigDecimal.ZERO);
+
         Map<String, BigDecimal> features = new LinkedHashMap<>();
+        features.put("previous_day_withdrawal", previousDayWithdrawal);
+        features.put("rolling_average_3", rollingAverage3);
+        features.put("rolling_average_7", rollingAverage7);
+        features.put("rolling_average_14", rollingAverage14);
+        features.put("rolling_average_30", rollingAverage30);
+        features.put("monthly_average", monthlyAverage);
+        features.put("quarterly_average", quarterlyAverage);
+        features.put("withdrawal_growth_rate", growthRate);
+        features.put("cash_remaining_percentage", cashRemainingPercentage);
+        features.put("festival_weight", BigDecimal.ONE);
+        features.put("holiday_weight", BigDecimal.ONE);
+        features.put("salary_day_weight", BigDecimal.ONE);
+        features.put("weather_weight", BigDecimal.ONE);
+        features.put("event_weight", BigDecimal.ONE);
+        features.put("atm_type_encoded", BigDecimal.valueOf(atmTypeCode(atm)));
+        features.put("city_encoded", BigDecimal.valueOf(cityCode(atm)));
+        features.put("days_since_last_refill", BigDecimal.valueOf(atm.getLastRefillAt() == null ? 0L : java.time.temporal.ChronoUnit.DAYS.between(atm.getLastRefillAt().atZone(ZoneOffset.UTC).toLocalDate(), predictionDate)));
+        features.put("cash_utilisation", cashUtilisation);
         features.put("historicalDemand", historicalDemand);
-        features.put("averageDailyWithdrawal", averageDailyWithdrawal);
-        features.put("peakHourDemand", peakHourDemand);
+        features.put("averageDailyWithdrawal", historicalDemand.divide(BigDecimal.valueOf(Math.max(1L, successAmounts.size())), 6, RoundingMode.HALF_UP));
+        features.put("peakHourDemand", successAmounts.stream().max(Comparator.naturalOrder()).orElse(BigDecimal.ZERO));
         features.put("dayOfWeek", BigDecimal.valueOf(predictionDate.getDayOfWeek().getValue() - 1L));
         features.put("month", BigDecimal.valueOf(predictionDate.getMonthValue()));
         return features;
+    }
+
+    private BigDecimal average(List<BigDecimal> values) {
+        if (values == null || values.isEmpty()) return BigDecimal.ZERO;
+        return values.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(values.size()), 6, RoundingMode.HALF_UP);
+    }
+
+    private List<BigDecimal> lastN(List<BigDecimal> values, int n) {
+        if (values == null || values.isEmpty()) return List.of();
+        int fromIndex = Math.max(0, values.size() - n);
+        return values.subList(fromIndex, values.size());
+    }
+
+    private long atmTypeCode(ATM atm) {
+        if (atm == null || atm.getAtmType() == null) return 0L;
+        return switch (atm.getAtmType()) {
+            case STANDARD -> 0L;
+            case DRIVE_THROUGH -> 1L;
+            case KIOSK -> 2L;
+        };
+    }
+
+    private long cityCode(ATM atm) {
+        if (atm == null || atm.getCity() == null || atm.getCity().isBlank()) return 0L;
+        return Math.abs(atm.getCity().hashCode()) % 10L;
     }
 
     private ATM findAtm(Long atmId) {

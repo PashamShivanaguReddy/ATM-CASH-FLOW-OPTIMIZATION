@@ -1,7 +1,9 @@
 package com.atm.prediction.controller;
 
 import com.atm.domain.dto.PredictionDto;
+import com.atm.domain.dto.PredictionEvaluationDto;
 import com.atm.prediction.dto.PredictionRequest;
+import com.atm.prediction.service.PredictionEvaluationService;
 import com.atm.prediction.service.PredictionService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -17,8 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/predictions")
 public class PredictionController {
     private final PredictionService service;
+    private final PredictionEvaluationService evaluationService;
 
-    public PredictionController(PredictionService service) { this.service = service; }
+    public PredictionController(PredictionService service, PredictionEvaluationService evaluationService) {
+        this.service = service;
+        this.evaluationService = evaluationService;
+    }
 
     @PostMapping("/{atmId}")
     public ResponseEntity<PredictionDto> create(@PathVariable Long atmId, @Valid @RequestBody PredictionRequest request) {
@@ -33,4 +39,9 @@ public class PredictionController {
 
     @GetMapping("/{atmId}/forecast")
     public List<PredictionDto> forecast(@PathVariable Long atmId) { return service.forecast(atmId); }
+
+    @PostMapping("/evaluations/{predictionId}")
+    public PredictionEvaluationDto evaluate(@PathVariable Long predictionId) {
+        return evaluationService.evaluatePrediction(predictionId);
+    }
 }

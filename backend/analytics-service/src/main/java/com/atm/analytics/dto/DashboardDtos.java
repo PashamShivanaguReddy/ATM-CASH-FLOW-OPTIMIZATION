@@ -15,7 +15,8 @@ public final class DashboardDtos {
                           BigDecimal predictedDemand, long pendingRefills, long openAlerts, long highRiskAtms) { }
     public record PageResponse<T>(List<T> content, int page, int size, long totalElements, int totalPages) { }
     public record AtmStatusItem(Long id, String atmCode, Long bankId, String location, AtmStatus status,
-                                BigDecimal currentCash, BigDecimal minimumCashThreshold, boolean lowCash, boolean critical) { }
+                                BigDecimal currentCash, BigDecimal minimumCashThreshold, boolean lowCash, boolean critical,
+                                Severity riskLevel) { }
     public record DemandItem(Long atmId, LocalDate date, BigDecimal predictedDemand, BigDecimal confidenceScore, String modelVersion) { }
     public record TransactionItem(Long id, Long atmId, String transactionId, String transactionType,
                                   BigDecimal amount, Instant timestamp, boolean success) { }

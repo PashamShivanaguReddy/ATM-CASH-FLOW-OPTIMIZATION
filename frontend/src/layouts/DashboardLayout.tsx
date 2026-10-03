@@ -1,52 +1,19 @@
-import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Sidebar } from '../components/navigation/Sidebar';
-import { Navbar } from '../components/navigation/Navbar';
-import { Breadcrumb, type BreadcrumbItem } from '../components/ui/Breadcrumb';
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import { Navbar } from "../components/navigation/Navbar";
+import { Sidebar } from "../components/navigation/Sidebar";
 
-export const DashboardLayout: React.FC = () => {
+export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
-
-  const pathSegments = location.pathname.split('/').filter(Boolean);
-  const breadcrumbItems: BreadcrumbItem[] = pathSegments.map((segment, index) => {
-    const url = `/${pathSegments.slice(0, index + 1).join('/')}`;
-    const formatted = segment
-      .replace(/-/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-    return {
-      label: formatted,
-      href: index === pathSegments.length - 1 ? undefined : url,
-    };
-  });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      <a
-        href="#main-content"
-        className="visually-hidden focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:shadow-lg"
-      >
-        Skip to main content
-      </a>
-
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-          breadcrumbs={<Breadcrumb items={breadcrumbItems} />}
-        />
-
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 focus:outline-none"
-        >
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
-          </div>
-        </main>
+    <div className="min-h-screen bg-canvas lg:flex">
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="min-w-0 flex-1">
+        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-7 sm:py-8 lg:px-9 lg:py-9"><Outlet /></main>
+        <footer className="px-4 pb-5 text-center text-[10px] text-muted/75 sm:px-7 lg:px-9">Flowline operations workspace <span className="px-1.5">·</span> Data shown for foundation preview</footer>
       </div>
     </div>
   );
-};
+}

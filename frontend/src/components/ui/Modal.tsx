@@ -1,114 +1,31 @@
-import React, { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
+import { Button } from "./Button";
 
-export interface ModalProps {
-  isOpen: boolean;
+interface ModalProps {
+  open: boolean;
   onClose: () => void;
   title: string;
-  description?: string;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  children: ReactNode;
 }
 
-export const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  description,
-  children,
-  footer,
-  maxWidth = 'md',
-}) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
+export function Modal({ open, onClose, title, children }: ModalProps) {
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
 
-    if (isOpen) {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-    } else {
-      if (dialog.open) {
-        dialog.close();
-      }
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const maxWidths = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    '2xl': 'max-w-2xl',
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <dialog
-        ref={dialogRef}
-        open={isOpen}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        aria-describedby={description ? 'modal-description' : undefined}
-        className={cn(
-          'relative w-full rounded-2xl bg-white shadow-2xl border border-slate-200 p-0 text-slate-900 overflow-hidden',
-          'm-0 open:flex open:flex-col',
-          maxWidths[maxWidth]
-        )}
-      >
-        <div className="flex items-start justify-between border-b border-slate-100 p-5">
-          <div>
-            <h2 id="modal-title" className="text-lg font-bold text-slate-900">
-              {title}
-            </h2>
-            {description && (
-              <p id="modal-description" className="text-sm text-slate-500 mt-1">
-                {description}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-6 max-h-[calc(85vh-130px)] overflow-y-auto">{children}</div>
-
-        {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
-            {footer}
-          </div>
-        )}
-      </dialog>
-    </div>
+  if (!open) return null;
+  return createPortal(
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[#10201d]/45 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-lg border border-line bg-white shadow-2xl">
+        <header className="flex items-center justify-between border-b border-line px-5 py-4"><h2 className="text-base font-bold text-ink">{title}</h2><Button aria-label="Close dialog" variant="ghost" size="sm" onClick={onClose}><X aria-hidden="true" className="size-4" /></Button></header>
+        <div className="p-5">{children}</div>
+      </section>
+    </div>,
+    document.body,
   );
-};
+}

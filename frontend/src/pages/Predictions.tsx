@@ -1,55 +1,116 @@
-import React from 'react';
-import { Cpu } from 'lucide-react';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Activity, RefreshCw, WandSparkles } from "lucide-react";
+import { useState } from "react";
+import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Button } from "../components/ui/Button";
+import { Card, CardHeader } from "../components/ui/Card";
+import { EmptyState } from "../components/ui/EmptyState";
+import { ErrorState } from "../components/ui/ErrorState";
+import { Loading } from "../components/ui/Loading";
+import { RiskBadge } from "../components/ui/RiskBadge";
+import { Select } from "../components/ui/Select";
+import { useToast } from "../context/ToastContext";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { apiErrorMessage } from "../services/api";
+import { getAllAtms } from "../services/atmService";
+import { getDashboardAtmRisk } from "../services/dashboardService";
+import { generatePrediction, getForecast, getLatestPrediction } from "../services/predictionService";
+import { getDailyDemandSummary, getTransactionSummary } from "../services/transactionService";
+import { inrFormatter } from "../utils/formatters";
 
-export const Predictions: React.FC = () => {
-  return (
-    <div className="space-y-6 text-left">
-      <div>
-        <div className="flex items-center gap-2">
-          <Badge variant="primary" dot>ML Service Connected</Badge>
-          <span className="text-xs text-slate-500 font-mono">Model v2.4 (RandomForest/XGBoost)</span>
-        </div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight mt-1">
-          Machine Learning Demand Forecasts
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          7-day cash withdrawal predictions, seasonality adjustments, and confidence intervals
-        </p>
-      </div>
+const dateFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short" });
+const dateTimeFormatter = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" });
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <Card title="Model Telemetry" className="md:col-span-1">
-          <div className="space-y-3 text-xs">
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-500">Pipeline Status:</span>
-              <span className="font-semibold text-emerald-600">Model Trained & Validated</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-500">Mean Absolute Error:</span>
-              <span className="font-mono text-slate-800">$4,120 / day</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-500">Confidence Threshold:</span>
-              <span className="font-semibold text-slate-800">95% CI</span>
-            </div>
-            <p className="text-slate-400 text-[11px] pt-2">
-              Predictions integration is scheduled for subsequent phase after foundation verification.
-            </p>
-          </div>
-        </Card>
+function historyRange() {
+	const end = new Date();
+	const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+	return { from: start.toISOString(), to: end.toISOString() };
+}
 
-        <Card title="Scheduled Forecast Generation" className="md:col-span-2">
-          <div className="flex flex-col items-center justify-center p-8 text-center text-xs text-slate-500">
-            <Cpu className="w-10 h-10 text-blue-500 mb-3" />
-            <h4 className="text-sm font-semibold text-slate-800">Inference Engine Active</h4>
-            <p className="max-w-md mt-1">
-              Downstream consumer pipelines consume daily transaction aggregates from Kafka and generate next-day replenishment requirements.
-            </p>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
+export function Predictions() {
+	useDocumentTitle("Predictions");
+	const queryClient = useQueryClient();
+	const { showToast } = useToast();
+	const [selectedAtmId, setSelectedAtmId] = useState("");
+	const [predictionDate, setPredictionDate] = useState(() => new Date().toISOString().slice(0, 10));
+	const atms = useQuery({ queryKey: ["atms", "prediction-options"], queryFn: getAllAtms });
+	const atmId = Number(selectedAtmId || atms.data?.[0]?.id || 0);
+	const range = historyRange();
+	const latest = useQuery({ queryKey: ["prediction", atmId, "latest"], queryFn: () => getLatestPrediction(atmId), enabled: atmId > 0 });
+	const risk = useQuery({ queryKey: ["dashboard", "atm-risk", String(atmId)], queryFn: () => getDashboardAtmRisk(atmId), enabled: atmId > 0 });
+	const forecast = useQuery({ queryKey: ["predictions", atmId, "forecast"], queryFn: () => getForecast(atmId), enabled: atmId > 0 });
+	const history = useQuery({ queryKey: ["demand-history", atmId, range.from.slice(0, 10)], queryFn: () => getDailyDemandSummary(atmId, range.from, range.to), enabled: atmId > 0 });
+	const historicalSummary = useQuery({ queryKey: ["transaction-summary", atmId, range.from.slice(0, 10)], queryFn: () => getTransactionSummary(atmId, range.from, range.to), enabled: atmId > 0 });
+
+	const generate = useMutation({
+		mutationFn: () => generatePrediction(atmId, { predictionDate }),
+		onSuccess: async () => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ["prediction", atmId] }),
+				queryClient.invalidateQueries({ queryKey: ["predictions", atmId] }),
+				queryClient.invalidateQueries({ queryKey: ["alerts"] }),
+				queryClient.invalidateQueries({ queryKey: ["atm-alerts", atmId] }),
+				queryClient.invalidateQueries({ queryKey: ["analytics", "predictions"] }),
+				queryClient.invalidateQueries({ queryKey: ["analytics", "cash-demand"] }),
+				queryClient.invalidateQueries({ queryKey: ["dashboard", "summary"] }),
+			]);
+			showToast("Prediction generated by the prediction service.");
+		},
+		onError: async (error) => {
+			const [latestState] = await Promise.all([latest.refetch(), forecast.refetch()]);
+			if (latestState.data?.predictionDate === predictionDate) {
+				showToast("A prediction for this date is already available. Current forecast data has been refreshed.");
+				return;
+			}
+			showToast(apiErrorMessage(error, "Prediction could not be confirmed."), "error");
+		},
+	});
+
+	const chartByDate = new Map<string, { date: string; historicalDemand?: number; forecastDemand?: number }>();
+	for (const point of history.data ?? []) chartByDate.set(point.period, { date: point.period, historicalDemand: point.amount });
+	for (const point of forecast.data ?? []) {
+		const row = chartByDate.get(point.predictionDate) ?? { date: point.predictionDate };
+		row.forecastDemand = point.predictedDemand;
+		chartByDate.set(point.predictionDate, row);
+	}
+	const chartData = [...chartByDate.values()].sort((left, right) => left.date.localeCompare(right.date));
+	const refresh = () => Promise.all([latest.refetch(), forecast.refetch(), history.refetch(), historicalSummary.refetch()]);
+
+	if (atms.isPending) return <Loading label="Loading ATM choices" />;
+	if (atms.isError) return <ErrorState title="Prediction workspace unavailable" message="ATM locations could not be loaded." onRetry={() => void atms.refetch()} />;
+	if (atms.data.length === 0) return <EmptyState title="No ATMs available" message="Add an ATM before generating demand predictions." />;
+
+	return (
+		<div className="page-enter space-y-6">
+			<header className="flex flex-wrap items-end justify-between gap-4">
+				<div><p className="font-mono text-[10px] uppercase tracking-[0.12em] text-moss">Demand planning</p><h1 className="mt-2 text-2xl font-bold text-ink sm:text-[28px]">Predictions</h1><p className="mt-1 text-sm text-muted">Model-generated demand outlook by ATM.</p></div>
+				<Button variant="secondary" onClick={() => void refresh()} disabled={latest.isFetching || forecast.isFetching || history.isFetching} aria-label="Refresh prediction data"><RefreshCw aria-hidden="true" className={`size-4 ${latest.isFetching || forecast.isFetching || history.isFetching ? "animate-spin" : ""}`} />Refresh</Button>
+			</header>
+
+			<Card className="p-5 sm:p-6">
+				<div className="grid items-end gap-4 sm:grid-cols-[minmax(220px,1fr)_190px_auto]">
+					<Select label="ATM" value={String(atmId)} options={atms.data.map((atm) => ({ label: `${atm.atmCode} · ${atm.city}`, value: String(atm.id) }))} onChange={(event) => setSelectedAtmId(event.target.value)} />
+					<div className="grid gap-1.5"><label htmlFor="prediction-date" className="text-sm font-semibold text-ink">Prediction date</label><input id="prediction-date" type="date" value={predictionDate} onChange={(event) => setPredictionDate(event.target.value)} className="h-10 rounded-md border border-line bg-white px-3 text-sm text-ink focus:border-moss focus:outline-none focus:ring-3 focus:ring-mint" /></div>
+					<Button onClick={() => generate.mutate()} disabled={!predictionDate || generate.isPending}><WandSparkles aria-hidden="true" className="size-4" />{generate.isPending ? "Generating…" : "Generate prediction"}</Button>
+				</div>
+			</Card>
+
+			<section aria-label="Prediction summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+				<Card className="p-5"><p className="text-xs font-semibold text-muted">Predicted demand</p>{latest.isPending ? <p className="mt-3 text-sm text-muted">Loading…</p> : latest.isError ? <p className="mt-3 text-sm text-coral">Unavailable</p> : <><p className="mt-2 text-xl font-bold text-ink">{latest.data ? inrFormatter.format(latest.data.predictedDemand) : "No prediction"}</p><p className="mt-1 text-xs text-muted">{latest.data ? `For ${dateFormatter.format(new Date(`${latest.data.predictionDate}T00:00:00Z`))}` : "Generate a model prediction to begin"}</p></>}</Card>
+				<Card className="p-5"><p className="text-xs font-semibold text-muted">Confidence</p><p className="mt-2 text-xl font-bold text-ink">{latest.data?.confidenceScore == null ? "—" : `${(latest.data.confidenceScore * 100).toFixed(1)}%`}</p><p className="mt-1 text-xs text-muted">Model-reported confidence</p></Card>
+				<Card className="p-5"><p className="text-xs font-semibold text-muted">ATM risk</p><div className="mt-3">{risk.isPending ? <span className="text-sm text-muted">Loading…</span> : risk.isError || !risk.data ? <span className="text-sm text-coral">Unavailable</span> : <RiskBadge level={risk.data.riskLevel} />}</div><p className="mt-2 text-xs text-muted">Backend risk assessment</p></Card>
+				<Card className="p-5"><p className="text-xs font-semibold text-muted">Model version</p><p className="mt-2 break-all text-xl font-bold text-ink">{latest.data?.modelVersion ?? "—"}</p><p className="mt-1 text-xs text-muted">{latest.data ? `Generated ${dateTimeFormatter.format(new Date(latest.data.generatedAt))}` : "No model run recorded"}</p></Card>
+				<Card className="p-5"><p className="text-xs font-semibold text-muted">Historical demand · 30 days</p>{historicalSummary.isPending ? <p className="mt-3 text-sm text-muted">Loading…</p> : historicalSummary.isError ? <p className="mt-3 text-sm text-coral">Unavailable</p> : <><p className="mt-2 text-xl font-bold text-ink">{inrFormatter.format(historicalSummary.data.totalWithdrawals)}</p><p className="mt-1 text-xs text-muted">Successful withdrawals from transaction service</p></>}</Card>
+			</section>
+
+			<Card className="min-w-0 overflow-hidden">
+				<CardHeader title="Historical demand and forecast" description="Daily withdrawals and model forecast · last 30 days and available forecast" action={<span className="hidden items-center gap-3 text-[10px] font-medium text-muted sm:flex"><span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-moss" />Historical</span><span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#d3a156]" />Forecast</span></span>} />
+				{history.isPending || forecast.isPending ? <Loading label="Loading demand history and forecast" /> : history.isError || forecast.isError ? <ErrorState title="Forecast chart unavailable" message="Demand history or prediction records could not be loaded." onRetry={() => void refresh()} /> : chartData.length === 0 ? <EmptyState title="No demand data yet" message="Historical withdrawals or model forecasts will appear here when available." /> : <div className="h-[320px] px-2 pb-4 pt-6 sm:px-5"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={chartData} margin={{ top: 6, right: 12, bottom: 0, left: 4 }}>
+					<CartesianGrid vertical={false} stroke="#e8ece8" strokeDasharray="3 4" /><XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#79857f", fontSize: 10 }} tickFormatter={(value: string) => dateFormatter.format(new Date(`${value}T00:00:00Z`))} minTickGap={24} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#79857f", fontSize: 10 }} tickFormatter={(value: number) => `₹${Math.round(value / 1000)}k`} /><Tooltip labelFormatter={(value) => dateTimeFormatter.format(new Date(`${String(value)}T00:00:00Z`))} formatter={(value) => inrFormatter.format(Number(value))} contentStyle={{ border: "1px solid #e3e8e3", borderRadius: 6, fontSize: 12 }} />
+					<Area type="monotone" dataKey="historicalDemand" name="Historical demand" stroke="#126b58" strokeWidth={2} fill="#126b58" fillOpacity={0.12} connectNulls={false} /><Line type="monotone" dataKey="forecastDemand" name="Forecast" stroke="#d3a156" strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} />
+				</ComposedChart></ResponsiveContainer></div>}
+			</Card>
+			{latest.data && <p className="flex items-center gap-2 text-xs text-muted"><Activity aria-hidden="true" className="size-3.5" />Prediction generated at {dateTimeFormatter.format(new Date(latest.data.generatedAt))} by model {latest.data.modelVersion}.</p>}
+		</div>
+	);
+}

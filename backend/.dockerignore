@@ -1,6 +1,9 @@
 **/target/
 **/.idea/
 **/.vscode/
+**/.env
+**/.env.*
+!**/.env.example
 .git/
 *.log
 PHASE_*_RESULT.md

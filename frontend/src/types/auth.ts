@@ -1,27 +1,22 @@
-export type UserRole =
-  | 'SUPER_ADMIN'
-  | 'BANK_ADMIN'
-  | 'BANK_MANAGER'
-  | 'ATM_OPERATOR';
-
-export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'LOCKED';
-
-export interface User {
-  id: number;
+export interface AuthUser {
+  id: string;
+  name: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
   role: UserRole;
-  status?: UserStatus;
-  bankId?: number | null;
-  createdAt?: string;
-  updatedAt?: string;
+  bankId: number | null;
 }
 
-export interface LoginRequest {
-  email: string;
-  password: string;
+export type UserRole = "SUPER_ADMIN" | "BANK_ADMIN" | "BANK_MANAGER" | "ATM_OPERATOR";
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthSession {
+  user: AuthUser;
+  tokens: AuthTokens;
+  expiresAt: number;
 }
 
 export interface LoginResponse {
@@ -33,15 +28,4 @@ export interface LoginResponse {
   email: string;
   role: UserRole;
   bankId: number | null;
-}
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
-export interface RefreshTokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-  expiresInSeconds: number;
 }

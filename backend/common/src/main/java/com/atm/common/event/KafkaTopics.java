@@ -12,6 +12,7 @@ public final class KafkaTopics {
     public static final String STOCKOUT_RISK_DETECTED = "stockout-risk.detected";
     public static final String ALERT_GENERATED = "alert.generated";
     public static final String RECOMMENDATION_CREATED = "recommendation.created";
+    public static final String RECOMMENDATION_APPROVED = "recommendation.approved";
 
     private KafkaTopics() { }
 }

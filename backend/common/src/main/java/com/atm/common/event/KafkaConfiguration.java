@@ -49,6 +49,7 @@ public class KafkaConfiguration {
     @Bean NewTopic lowCashDetectedTopic() { return topic(KafkaTopics.LOW_CASH_DETECTED); }
     @Bean NewTopic stockoutRiskDetectedTopic() { return topic(KafkaTopics.STOCKOUT_RISK_DETECTED); }
     @Bean NewTopic recommendationCreatedTopic() { return topic(KafkaTopics.RECOMMENDATION_CREATED); }
+    @Bean NewTopic recommendationApprovedTopic() { return topic(KafkaTopics.RECOMMENDATION_APPROVED); }
 
     private NewTopic topic(String name) { return TopicBuilder.name(name).partitions(3).replicas(1).build(); }
 }

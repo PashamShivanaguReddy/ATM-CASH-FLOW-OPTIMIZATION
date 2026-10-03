@@ -110,11 +110,17 @@ services:
       DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      PUBLIC_BASE_URL: http://localhost:8080
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+      INITIAL_SUPER_ADMIN_EMAIL: ${INITIAL_SUPER_ADMIN_EMAIL:-}
+      INITIAL_SUPER_ADMIN_PASSWORD: ${INITIAL_SUPER_ADMIN_PASSWORD:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-3600000}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-    depends_on: { postgres: { condition: service_healthy } }
+    depends_on:
+      postgres: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8081/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   user-service:
@@ -128,7 +134,9 @@ services:
     <<: *java-defaults
     command: ["java", "-jar", "/app/jars/bank-service.jar"]
     environment: { SERVER_PORT: 8083, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
-    depends_on: { postgres: { condition: service_healthy } }
+    depends_on:
+      postgres: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8083/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   atm-service:
@@ -141,36 +149,52 @@ services:
   transaction-service:
     <<: *java-defaults
     command: ["java", "-jar", "/app/jars/transaction-service.jar"]
-    environment: { SERVER_PORT: 8085, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", KAFKA_BOOTSTRAP_SERVERS: kafka:9092, SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
-    depends_on: { postgres: { condition: service_healthy }, kafka: { condition: service_healthy } }
+    environment: { SERVER_PORT: 8085, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8085/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   cash-inventory-service:
     <<: *java-defaults
     command: ["java", "-jar", "/app/jars/cash-inventory-service.jar"]
-    environment: { SERVER_PORT: 8086, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
-    depends_on: { postgres: { condition: service_healthy } }
+    environment: { SERVER_PORT: 8086, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8086/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   prediction-service:
     <<: *java-defaults
     command: ["java", "-jar", "/app/jars/prediction-service.jar"]
-    environment: { SERVER_PORT: 8087, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", KAFKA_BOOTSTRAP_SERVERS: kafka:9092, ML_SERVICE_URL: http://ml-service:8090, ALERT_SERVICE_URL: http://alert-service:8088, SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
-    depends_on: { postgres: { condition: service_healthy }, kafka: { condition: service_healthy }, ml-service: { condition: service_healthy } }
+    environment: { SERVER_PORT: 8087, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", ML_SERVICE_URL: http://ml-service:8090, ALERT_SERVICE_URL: http://alert-service:8088, SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      ml-service: { condition: service_healthy }
+      alert-service: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8087/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   alert-service:
     <<: *java-defaults
     command: ["java", "-jar", "/app/jars/alert-service.jar"]
-    environment: { SERVER_PORT: 8088, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", KAFKA_BOOTSTRAP_SERVERS: kafka:9092, SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
-    depends_on: { postgres: { condition: service_healthy }, kafka: { condition: service_healthy } }
+    environment: { SERVER_PORT: 8088, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", KAFKA_BOOTSTRAP_SERVERS: "kafka:9092", SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8088/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   optimization-service:
     <<: *java-defaults
     command: ["java", "-jar", "/app/jars/optimization-service.jar"]
     environment: { SERVER_PORT: 8089, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
-    depends_on: { postgres: { condition: service_healthy } }
+    depends_on:
+      postgres: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8089/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   notification-service:
@@ -183,7 +207,9 @@ services:
     <<: *java-defaults
     command: ["java", "-jar", "/app/jars/analytics-service.jar"]
     environment: { SERVER_PORT: 8092, DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}", DB_USERNAME: "${POSTGRES_USER}", DB_PASSWORD: "${POSTGRES_PASSWORD}", JWT_SECRET: "${JWT_SECRET}", SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-prod}" }
-    depends_on: { postgres: { condition: service_healthy } }
+    depends_on:
+      postgres: { condition: service_healthy }
+      atm-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8092/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }
 
   api-gateway:
@@ -192,7 +218,7 @@ services:
     environment:
       SERVER_PORT: 8080
       JWT_SECRET: ${JWT_SECRET}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
       AUTH_SERVICE_URL: http://auth-service:8081
       USER_SERVICE_URL: http://user-service:8082
       BANK_SERVICE_URL: http://bank-service:8083
@@ -208,6 +234,12 @@ services:
     depends_on:
       auth-service: { condition: service_healthy }
       user-service: { condition: service_healthy }
+      bank-service: { condition: service_healthy }
       atm-service: { condition: service_healthy }
+      transaction-service: { condition: service_healthy }
+      cash-inventory-service: { condition: service_healthy }
       prediction-service: { condition: service_healthy }
+      alert-service: { condition: service_healthy }
+      optimization-service: { condition: service_healthy }
+      analytics-service: { condition: service_healthy }
     healthcheck: { test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v1/status"], interval: 15s, timeout: 5s, retries: 20, start_period: 5m }

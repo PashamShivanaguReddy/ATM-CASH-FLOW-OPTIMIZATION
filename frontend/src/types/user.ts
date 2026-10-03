@@ -1,45 +1,40 @@
-import type { UserRole, UserStatus } from './auth';
+import type { UserRole } from "./auth";
 
-export interface UserDto {
+export type UserStatus = "ACTIVE" | "INACTIVE" | "LOCKED";
+
+export interface UserRecord {
   id: number;
   bankId: number | null;
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
+  phone: string | null;
   role: UserRole;
   status: UserStatus;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
-export interface CreateUserRequest {
+export interface UserInput {
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
   password?: string;
-  role: UserRole;
-  status: UserStatus;
   bankId?: number | null;
+  role: UserRole;
+  status?: UserStatus;
 }
 
-export interface UpdateUserRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  role: UserRole;
-  status: UserStatus;
-  bankId?: number | null;
-}
-
-export interface UserFilterParams {
+export interface UserListParams {
+  page: number;
+  pageSize: number;
   search?: string;
-  role?: UserRole | '';
-  status?: UserStatus | '';
-  page?: number;
-  size?: number;
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  role?: UserRole | "";
+  status?: UserStatus | "";
+}
+
+export interface UserListResult {
+  items: UserRecord[];
+  page: number;
+  pageSize: number;
+  total: number;
 }

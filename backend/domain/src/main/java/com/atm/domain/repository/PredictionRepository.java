@@ -6,5 +6,6 @@ import java.util.List;
 import java.util.Optional;
 public interface PredictionRepository extends JpaRepository<Prediction, Long> {
 	List<Prediction> findByAtmIdAndPredictionDateBetweenOrderByPredictionDateAsc(Long atmId, LocalDate from, LocalDate to);
+	List<Prediction> findByPredictionDate(LocalDate predictionDate);
 	Optional<Prediction> findFirstByAtmIdOrderByPredictionDateDescGeneratedAtDesc(Long atmId);
 }

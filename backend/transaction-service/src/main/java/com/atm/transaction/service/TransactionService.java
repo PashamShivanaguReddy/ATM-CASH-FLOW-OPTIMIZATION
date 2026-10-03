@@ -14,11 +14,14 @@ import com.atm.transaction.exception.TransactionAuthorizationException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -87,7 +90,17 @@ public class TransactionService {
         AtmPrincipal principal = principal(authentication); requireAuthenticated(authentication);
         Long bankId = "SUPER_ADMIN".equals(principal.role()) ? null : requireBank(principal);
         if (atmId != null) authorize(atms.findById(atmId).orElseThrow(() -> new ResourceNotFoundException("ATM not found", "ATM_NOT_FOUND")), authentication);
-        return transactions.search(bankId, atmId, from, to, type, success, pageable).map(this::response);
+        Specification<ATMTransaction> specification = (root, query, criteria) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (bankId != null) predicates.add(criteria.equal(root.get("atm").get("bank").get("id"), bankId));
+            if (atmId != null) predicates.add(criteria.equal(root.get("atm").get("id"), atmId));
+            if (from != null) predicates.add(criteria.greaterThanOrEqualTo(root.get("timestamp"), from));
+            if (to != null) predicates.add(criteria.lessThanOrEqualTo(root.get("timestamp"), to));
+            if (type != null) predicates.add(criteria.equal(root.get("transactionType"), type));
+            if (success != null) predicates.add(criteria.equal(root.get("success"), success));
+            return criteria.and(predicates.toArray(Predicate[]::new));
+        };
+        return transactions.findAll(specification, pageable).map(this::response);
     }
 
     @Transactional(readOnly = true)
@@ -132,6 +145,10 @@ public class TransactionService {
     private BigDecimal sum(List<ATMTransaction> values) { return values.stream().map(ATMTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add); }
 
     private void validateCashOperation(ATM atm, TransactionType type, BigDecimal amount) {
+        if ((type == TransactionType.WITHDRAWAL || type == TransactionType.DEPOSIT)
+                && amount.remainder(BigDecimal.valueOf(50)).compareTo(BigDecimal.ZERO) != 0) {
+            throw new BusinessRuleException("Amount must be a multiple of the smallest supported denomination", "UNSUPPORTED_CASH_DENOMINATION");
+        }
         if (type == TransactionType.WITHDRAWAL && atm.getCurrentCash().compareTo(amount) < 0) throw new BusinessRuleException("Insufficient ATM cash", "INSUFFICIENT_CASH");
         if (type == TransactionType.DEPOSIT && atm.getCurrentCash().add(amount).compareTo(atm.getCashCapacity()) > 0) throw new BusinessRuleException("Deposit exceeds ATM capacity", "CASH_EXCEEDS_CAPACITY");
     }

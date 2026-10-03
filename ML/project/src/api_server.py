@@ -1,13 +1,22 @@
 """HTTP entrypoint for the ATM forecasting service."""
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from api import forecast_atm, forecast_batch
-from predict import forecast_next_7_days
+from predict import forecast_next_7_days, load_forecast_model
 
-app = FastAPI(title="ATM ML Service", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    load_forecast_model()
+    yield
+
+
+app = FastAPI(title="ATM ML Service", version="1.0.0", lifespan=lifespan)
 
 
 class ForecastRequest(BaseModel):
@@ -36,7 +45,7 @@ class BatchRequest(BaseModel):
 class LegacyPredictionRequest(BaseModel):
     atmId: str
     predictionDate: str
-    features: Dict[str, float] = {}
+    features: Dict[str, float] | None = None
 
 
 @app.get("/health")
@@ -64,7 +73,7 @@ def batch_forecast(request: BatchRequest) -> Dict[str, Any]:
 def legacy_predict(request: LegacyPredictionRequest) -> Dict[str, Any]:
     """Keep the existing Java prediction client compatible with the ML API."""
     try:
-        result = forecast_next_7_days(request.atmId)
+        result = forecast_next_7_days(request.atmId, request.features or {})
         return {
             "atmId": request.atmId,
             "predictionDate": request.predictionDate,

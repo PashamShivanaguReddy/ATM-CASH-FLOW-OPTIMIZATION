@@ -1,101 +1,34 @@
-import React from 'react';
-import { ChevronDown } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { useId, type SelectHTMLAttributes } from "react";
+import { ChevronDown } from "lucide-react";
+import { cn } from "../../utils/cn";
 
 export interface SelectOption {
   label: string;
-  value: string | number;
+  value: string;
 }
 
-export interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  options?: SelectOption[];
+interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+  label: string;
+  options: SelectOption[];
   placeholder?: string;
+  error?: string;
 }
 
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  (
-    {
-      className,
-      label,
-      error,
-      helperText,
-      options,
-      placeholder,
-      id,
-      children,
-      required,
-      ...props
-    },
-    ref
-  ) => {
-    const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
-    const errorId = error && selectId ? `${selectId}-error` : undefined;
-    const helperId = helperText && selectId ? `${selectId}-helper` : undefined;
+export function Select({ label, options, placeholder, error, id, className, ...props }: SelectProps) {
+  const generatedId = useId();
+  const selectId = id ?? generatedId;
 
-    return (
-      <div className="w-full space-y-1.5 text-left">
-        {label && (
-          <label
-            htmlFor={selectId}
-            className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
-          >
-            {label}
-            {required && <span className="text-rose-500 ml-0.5">*</span>}
-          </label>
-        )}
-
-        <div className="relative rounded-lg shadow-sm">
-          <select
-            ref={ref}
-            id={selectId}
-            aria-invalid={!!error}
-            aria-describedby={
-              [errorId, helperId].filter(Boolean).join(' ') || undefined
-            }
-            className={cn(
-              'block w-full appearance-none rounded-lg border border-slate-300 bg-white px-3.5 py-2 pr-10 text-sm text-slate-900 transition-colors',
-              'focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20',
-              error && 'border-rose-500 focus:border-rose-600 focus:ring-rose-500/20 text-rose-900',
-              'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500',
-              className
-            )}
-            {...props}
-          >
-            {placeholder && (
-              <option value="" disabled>
-                {placeholder}
-              </option>
-            )}
-            {options
-              ? options.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))
-              : children}
-          </select>
-
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-            <ChevronDown className="w-4 h-4" />
-          </div>
-        </div>
-
-        {error ? (
-          <p id={errorId} className="text-xs text-rose-600">
-            {error}
-          </p>
-        ) : helperText ? (
-          <p id={helperId} className="text-xs text-slate-500">
-            {helperText}
-          </p>
-        ) : null}
+  return (
+    <div className="grid gap-1.5">
+      <label htmlFor={selectId} className="text-sm font-semibold text-ink">{label}</label>
+      <div className="relative">
+        <select id={selectId} aria-invalid={Boolean(error)} className={cn("h-11 w-full appearance-none rounded-md border border-line bg-white px-3.5 pr-10 text-sm text-ink focus:border-moss focus:outline-none focus:ring-3 focus:ring-mint", error && "border-coral", className)} {...props}>
+          {placeholder && <option value="">{placeholder}</option>}
+          {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+        <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
       </div>
-    );
-  }
-);
-
-Select.displayName = 'Select';
+      {error && <span className="text-xs text-coral">{error}</span>}
+    </div>
+  );
+}

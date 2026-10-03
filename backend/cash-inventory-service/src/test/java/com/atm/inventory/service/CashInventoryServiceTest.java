@@ -25,6 +25,7 @@ class CashInventoryServiceTest {
     @Mock ATMRepository atms;
     @Mock CashInventoryRepository inventory;
     @Mock CashRefillRepository refills;
+    @Mock OptimizationRecommendationRepository recommendations;
     @Mock AuditLogRepository audits;
     @Mock UserRepository users;
     CashInventoryService service;
@@ -84,6 +85,34 @@ class CashInventoryServiceTest {
     }
 
     @Test
+    void completeRefillReconcilesDenominationInventoryToCash() {
+        CashInventory existing2000 = new CashInventory(); existing2000.setAtm(atm); existing2000.setDenomination(2000); existing2000.setNoteCount(1); existing2000.setTotalAmount(new BigDecimal("2000"));
+        CashInventory existing500 = new CashInventory(); existing500.setAtm(atm); existing500.setDenomination(500); existing500.setNoteCount(1); existing500.setTotalAmount(new BigDecimal("500"));
+        when(inventory.findByAtmIdForUpdate(10L)).thenReturn(new ArrayList<>(List.of(existing2000, existing500)));
+        atm.setCurrentCash(new BigDecimal("2500"));
+        CashRefill approved = refill(RefillStatus.APPROVED, new BigDecimal("1500")); approved.setId(20L);
+        when(refills.findById(20L)).thenReturn(Optional.of(approved));
+
+        service.complete(20L, operator, "ip");
+
+        assertThat(atm.getCurrentCash()).isEqualByComparingTo("4000");
+        assertThat(inventory.findByAtmIdForUpdate(10L).stream().map(CashInventory::getTotalAmount).reduce(BigDecimal.ZERO, BigDecimal::add))
+                .isEqualByComparingTo("4000");
+    }
+
+    @Test
+    void transactionCashReconciliationKeepsDenominationsEqualToAtmCash() {
+        atm.setCurrentCash(new BigDecimal("2350"));
+
+        service.reconcileInventoryToAtmCash(10L);
+
+        assertThat(inventory.findByAtmIdForUpdate(10L).stream()
+                .map(CashInventory::getTotalAmount).reduce(BigDecimal.ZERO, BigDecimal::add))
+                .isEqualByComparingTo(atm.getCurrentCash());
+        verify(atms).findByIdForUpdate(10L);
+    }
+
+    @Test
     void rejectsRequestedRefill() {
         CashRefill requested = refill(RefillStatus.REQUESTED, new BigDecimal("1000")); requested.setId(20L);
         when(refills.findById(20L)).thenReturn(Optional.of(requested));
@@ -103,6 +132,32 @@ class CashInventoryServiceTest {
         atm.setCurrentCash(new BigDecimal("9500"));
         assertThatThrownBy(() -> service.requestRefill(new RefillRequest(10L, new BigDecimal("501"), "too much"), admin, "ip"))
                 .isInstanceOf(BusinessRuleException.class).hasMessage("Refill exceeds ATM cash capacity");
+    }
+
+    @Test
+    void rejectsRefillAmountsThatCannotBeRepresentedBySupportedDenominations() {
+        assertThatThrownBy(() -> service.requestRefill(new RefillRequest(10L, new BigDecimal("125"), "unsupported"), admin, "ip"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Refill amount must match supported denominations");
+    }
+
+    @Test
+    void approvedRecommendationCreatesOneLinkedRefillRequest() {
+        service = new CashInventoryService(atms, inventory, refills, recommendations, audits, users);
+        OptimizationRecommendation recommendation = new OptimizationRecommendation();
+        recommendation.setId(30L);
+        recommendation.setAtm(atm);
+        recommendation.setStatus(RecommendationStatus.APPROVED);
+        recommendation.setRecommendedRefillAmount(new BigDecimal("1000"));
+        when(recommendations.findById(30L)).thenReturn(Optional.of(recommendation));
+        when(refills.existsByRecommendationId(30L)).thenReturn(false, true);
+
+        service.createRefillFromApprovedRecommendation(30L);
+        service.createRefillFromApprovedRecommendation(30L);
+
+        verify(refills, times(1)).save(argThat(refill -> refill.getRecommendation() == recommendation
+                && refill.getStatus() == RefillStatus.REQUESTED
+                && refill.getRefillAmount().compareTo(new BigDecimal("1000")) == 0));
     }
 
     private CashRefill refill(RefillStatus status, BigDecimal amount) { CashRefill refill = new CashRefill(); refill.setAtm(atm); refill.setStatus(status); refill.setRefillAmount(amount); refill.setRefillDate(java.time.Instant.now()); return refill; }

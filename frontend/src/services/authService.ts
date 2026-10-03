@@ -1,77 +1,61 @@
-import { apiClient } from './api';
-import { ENDPOINTS } from '../constants/apiEndpoints';
-import type { ApiResponse } from '../types/api';
-import type {
-  LoginRequest,
-  LoginResponse,
-  RefreshTokenResponse,
-  User,
-} from '../types/auth';
-import { storage } from '../utils/storage';
+import { api } from "./api";
+import { clearAuthSession, getAuthSession, setAuthSession } from "./authStorage";
+import type { AuthSession, LoginResponse } from "../types/auth";
 
-export const authService = {
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<ApiResponse<LoginResponse>>(
-      ENDPOINTS.AUTH.LOGIN,
-      credentials
-    );
-    const data = response.data.data;
+interface ApiEnvelope<T> {
+  data: T;
+}
 
-    storage.setAccessToken(data.accessToken);
-    if (data.refreshToken) {
-      storage.setRefreshToken(data.refreshToken);
-    }
+interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresInSeconds: number;
+  tokenType: string;
+}
 
-    const user: User = {
-      id: data.userId,
-      email: data.email,
-      role: data.role,
-      bankId: data.bankId,
+function createSession(response: LoginResponse): AuthSession {
+  return {
+    user: {
+      id: String(response.userId),
+      name: response.email.split("@")[0],
+      email: response.email,
+      role: response.role,
+      bankId: response.bankId,
+    },
+    tokens: { accessToken: response.accessToken, refreshToken: response.refreshToken },
+    expiresAt: Date.now() + response.expiresInSeconds * 1000,
+  };
+}
+
+export async function login(email: string, password: string): Promise<AuthSession> {
+  const { data } = await api.post<ApiEnvelope<LoginResponse>>("/auth/login", { email, password });
+  const session = createSession(data.data);
+  setAuthSession(session);
+  return session;
+}
+
+export async function refreshSession(): Promise<AuthSession | null> {
+  const session = getAuthSession();
+  if (!session?.tokens.refreshToken) return null;
+
+  try {
+    const { data } = await api.post<ApiEnvelope<RefreshResponse>>("/auth/refresh", { refreshToken: session.tokens.refreshToken });
+    const refreshed: AuthSession = {
+      ...session,
+      tokens: { accessToken: data.data.accessToken, refreshToken: data.data.refreshToken },
+      expiresAt: Date.now() + data.data.expiresInSeconds * 1000,
     };
-    storage.setUser(user);
+    setAuthSession(refreshed);
+    return refreshed;
+  } catch {
+    clearAuthSession();
+    return null;
+  }
+}
 
-    return data;
-  },
-
-  async logout(): Promise<void> {
-    const refreshToken = storage.getRefreshToken();
-    try {
-      if (refreshToken) {
-        await apiClient.post<ApiResponse<void>>(ENDPOINTS.AUTH.LOGOUT, {
-          refreshToken,
-        });
-      }
-    } catch {
-      // Best-effort logout notification
-    } finally {
-      storage.clearAuth();
-    }
-  },
-
-  async refreshToken(): Promise<RefreshTokenResponse> {
-    const currentRefreshToken = storage.getRefreshToken();
-    if (!currentRefreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await apiClient.post<ApiResponse<RefreshTokenResponse>>(
-      ENDPOINTS.AUTH.REFRESH,
-      { refreshToken: currentRefreshToken }
-    );
-    const data = response.data.data;
-
-    storage.setAccessToken(data.accessToken);
-    if (data.refreshToken) {
-      storage.setRefreshToken(data.refreshToken);
-    }
-    return data;
-  },
-
-  getCurrentUser(): User | null {
-    return storage.getUser();
-  },
-
-  isAuthenticated(): boolean {
-    return !!storage.getAccessToken();
-  },
-};
+export async function logout(): Promise<void> {
+  const session = getAuthSession();
+  clearAuthSession();
+  if (!session?.tokens.refreshToken) return;
+  await api.post("/auth/logout", { refreshToken: session.tokens.refreshToken }).catch(() => undefined);
+}

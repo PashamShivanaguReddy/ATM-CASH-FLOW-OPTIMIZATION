@@ -12,6 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import java.math.BigDecimal;
@@ -47,15 +50,15 @@ class TransactionServiceTest {
 
     @Test
     void successfulWithdrawalUpdatesCashAndAudit() {
-        var result = service.create(request("w-1", TransactionType.WITHDRAWAL, "125", true), bankUser, "127.0.0.1");
-        assertThat(result.created()).isTrue(); assertThat(atm.getCurrentCash()).isEqualByComparingTo("375");
+        var result = service.create(request("w-1", TransactionType.WITHDRAWAL, "100", true), bankUser, "127.0.0.1");
+        assertThat(result.created()).isTrue(); assertThat(atm.getCurrentCash()).isEqualByComparingTo("400");
         verify(audits).save(any(AuditLog.class)); verify(events, atLeastOnce()).publishEvent(any(TransactionEvent.class));
     }
 
     @Test
     void successfulDepositUpdatesCash() {
-        service.create(request("d-1", TransactionType.DEPOSIT, "125", true), bankUser, "ip");
-        assertThat(atm.getCurrentCash()).isEqualByComparingTo("625");
+        service.create(request("d-1", TransactionType.DEPOSIT, "100", true), bankUser, "ip");
+        assertThat(atm.getCurrentCash()).isEqualByComparingTo("600");
     }
 
     @Test
@@ -99,6 +102,14 @@ class TransactionServiceTest {
     }
 
     @Test
+    void successfulCashOperationsMustMatchSupportedDenominations() {
+        assertThatThrownBy(() -> service.create(request("w-invalid-note", TransactionType.WITHDRAWAL, "125", true), bankUser, "ip"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Amount must be a multiple of the smallest supported denomination");
+        assertThat(atm.getCurrentCash()).isEqualByComparingTo("500");
+    }
+
+    @Test
     void inactiveAtmIsRejected() {
         atm.setStatus(AtmStatus.INACTIVE);
         assertThatThrownBy(() -> service.create(request("i-1", TransactionType.WITHDRAWAL, "1", true), bankUser, "ip"))
@@ -122,6 +133,19 @@ class TransactionServiceTest {
         assertThat(result.totalWithdrawals()).isEqualByComparingTo("125");
         assertThat(result.totalDeposits()).isEqualByComparingTo("50");
         assertThat(result.peakTransactionHour()).isEqualTo(10);
+    }
+
+    @Test
+    void searchReturnsTransactionsFromCriteriaRepository() {
+        var pageable = PageRequest.of(0, 20);
+        when(transactions.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(java.util.List.of(transaction("listed-1", "125", true))));
+
+        var result = service.search(null, null, null, null, null, pageable, bankUser);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).transactionId()).isEqualTo("listed-1");
+        verify(transactions).findAll(any(Specification.class), eq(pageable));
     }
 
     private TransactionCreateRequest request(String id, TransactionType type, String amount, boolean success) {

@@ -41,6 +41,7 @@ public class KafkaEventPublisher {
             case STOCKOUT_RISK_DETECTED -> KafkaTopics.STOCKOUT_RISK_DETECTED;
             case ALERT_GENERATED -> KafkaTopics.ALERT_GENERATED;
             case RECOMMENDATION_CREATED -> KafkaTopics.RECOMMENDATION_CREATED;
+            case RECOMMENDATION_APPROVED -> KafkaTopics.RECOMMENDATION_APPROVED;
         };
     }
 }

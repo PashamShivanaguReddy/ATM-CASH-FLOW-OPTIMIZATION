@@ -6,6 +6,8 @@ spring:
     password: ${DB_PASSWORD}
   jpa.hibernate.ddl-auto: validate
   flyway.enabled: ${FLYWAY_ENABLED:true}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
 server.port: ${SERVER_PORT:8086}
 service.url: ${SERVICE_URL:http://localhost:8086}
 management.endpoints.web.exposure.include: health,info
