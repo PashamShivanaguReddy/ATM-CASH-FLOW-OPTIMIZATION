@@ -26,6 +26,7 @@ Thumbs.db
 
 # ML generated datasets and model artifacts
 ML/project/models/*.pkl
+!ML/project/models/atm_forecast_model_gbr_candidate.pkl
 ML/ml_dataset*.csv
 ML/ml_train.csv
 ML/ml_test.csv

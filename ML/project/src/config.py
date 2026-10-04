@@ -1,4 +1,5 @@
 """Central configuration for the ATM forecast service."""
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -9,6 +10,12 @@ SRC_DIR = BASE_DIR / "src"
 
 RAW_DATA_PATH = Path(__import__("os").environ.get("ML_DATA_PATH", str(BASE_DIR.parent / "ml_dataset_final.csv")))
 MODEL_PATH = MODELS_DIR / "atm_forecast_model.pkl"
+PREDICTION_MODEL_PATH = Path(
+    os.environ.get(
+        "ML_MODEL_PATH",
+        str(MODELS_DIR / "atm_forecast_model_gbr_candidate.pkl"),
+    )
+)
 METRICS_PATH = BASE_DIR / "model_metrics.json"
 PREDICTION_RESULTS_PATH = BASE_DIR / "prediction_results.csv"
 FEATURE_IMPORTANCE_PATH = BASE_DIR / "feature_importance.csv"

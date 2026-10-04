@@ -12,6 +12,16 @@ This project contains a production-ready Python pipeline for forecasting the nex
 - `src/forecast_service.py`: orchestration between the ML forecast and decision engine.
 - `src/route_optimizer.py`: optional OR-Tools route planner with a deterministic fallback.
 
+## Inference model
+
+The inference service loads `models/atm_forecast_model_gbr_candidate.pkl` by default.
+Set `ML_MODEL_PATH` to override the prediction artifact path. The training output
+`models/atm_forecast_model.pkl` remains the Random Forest artifact and is not used
+as the inference default.
+
+The deployed candidate contains seven `GradientBoostingRegressor` horizon models
+with 160 estimators per model and `max_depth=3`, trained with scikit-learn 1.2.2.
+
 ## Run
 
 ```bash

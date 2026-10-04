@@ -5,7 +5,7 @@ from typing import Dict, Mapping, Optional
 import numpy as np
 import pandas as pd
 
-from config import FEATURE_COLUMNS, MODEL_PATH, RAW_DATA_PATH
+from config import FEATURE_COLUMNS, PREDICTION_MODEL_PATH as MODEL_PATH, RAW_DATA_PATH
 from feature_engineering import build_model_input, load_and_prepare_data
 from utils import load_pickle
 
